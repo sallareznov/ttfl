@@ -1,0 +1,1350 @@
+<title>TTFL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column. Slate strip of tonight's games, then a ranked board of players. */
+:root{
+  --bg:#f3f4f7; --surface:#ffffff; --ink:#151a24; --muted:#5d6577; --line:#dde1ea;
+  --accent:#d4570f; --accent-soft:#fbe7da;
+  --ok:#1f7a4d; --ok-soft:#dcf1e6; --warn:#9a6400; --warn-soft:#fbefcf; --bad:#b3261e; --bad-soft:#f8dedc;
+  --spark:#9aa3b5;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
+  --accent:#f07a35; --accent-soft:#3a2416;
+  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
+  --spark:#5d6577; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
+  --accent:#f07a35; --accent-soft:#3a2416;
+  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
+  --spark:#5d6577; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap>*{min-width:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:2.1rem;line-height:1}
+h2{font-size:1.35rem;text-transform:uppercase;letter-spacing:.06em}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+.eyebrow{font-family:var(--display);text-transform:uppercase;letter-spacing:.12em;font-size:.85rem;color:var(--accent);font-weight:600}
+.notice{background:var(--accent-soft);border-radius:8px;padding:10px 14px;font-size:.92rem}
+.logo{display:inline-block;object-fit:contain;flex:0 0 auto;vertical-align:middle}
+.logo.d{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo.l{display:none}:root:not([data-theme="light"]) .logo.d{display:inline-block}}
+:root[data-theme="dark"] .logo.l{display:none}:root[data-theme="dark"] .logo.d{display:inline-block}
+.who .logo{width:38px;height:38px}
+.game .teams{display:flex;align-items:center;gap:8px}
+.game .teams .logo{width:30px;height:30px}
+/* menu */
+nav.menu{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:4px}
+nav.menu a{font-family:var(--display);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;padding:8px 12px;border-bottom:3px solid transparent;white-space:nowrap}
+nav.menu a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.menu a:hover{color:var(--ink)}
+[hidden]{display:none!important}
+.view{display:grid;gap:20px;min-width:0}
+.view>*{min-width:0}
+.view h2{margin-bottom:-8px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.lrow{display:grid;grid-template-columns:34px minmax(0,2fr) minmax(0,1fr) minmax(0,1.6fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow.head{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--muted);font-weight:600;padding-block:8px}
+.big{font-family:var(--display);font-size:1.5rem;font-weight:700;line-height:1;color:var(--accent)}
+.teamhead{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:1.1rem;letter-spacing:.03em}
+.teamhead .logo{width:28px;height:28px}
+.teamhead:first-child{border-top:0}
+.irow{display:grid;grid-template-columns:minmax(0,1.3fr) 110px minmax(0,3fr);gap:12px;align-items:start;padding:10px 14px;border-top:1px solid var(--line);font-size:.9rem}
+.irow .name{font-weight:600}
+.scores{display:flex;flex-wrap:wrap;gap:10px}
+.score{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;gap:2px;font-variant-numeric:tabular-nums}
+.score .line{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:1.15rem}
+.score .line .logo{width:24px;height:24px}
+.score .line .pts{margin-left:auto;padding-left:14px}
+.score .win{color:var(--ink)} .score .loss{color:var(--muted)}
+/* last night: compact rows, scorecard opens on tap */
+.lnrow{grid-template-columns:34px minmax(0,1fr) auto 18px;cursor:pointer}
+.lnrow:hover{background:var(--bg)}
+.lnrow .chev{color:var(--muted);transition:transform .12s;text-align:center}
+.lnrow[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.lnrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* live */
+.livebar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.livebar .st{font-size:.9rem;color:var(--muted)}
+.livebar .st b{color:var(--ink)}
+.livebar .st.err{color:var(--bad)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-right:6px;vertical-align:middle;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+button.score{font:inherit;color:inherit;text-align:left;cursor:pointer}
+button.score[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.score .gst{font-size:.78rem;color:var(--muted)}
+.score .gst.on{color:var(--bad);font-weight:600}
+.lvtag{color:var(--bad);font-weight:600}
+button.btn:disabled{opacity:.55;cursor:default}
+.scard{grid-column:1/-1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px}
+.scard .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.scard .tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}
+.scard .tile b{display:block;font-family:var(--display);font-size:1.35rem;line-height:1.1}
+.scard .tile span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.scard .calc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem}
+.scard .calc .pos{color:var(--ok)} .scard .calc .neg{color:var(--bad)}
+.scard .top{display:flex;gap:12px;align-items:center}
+.scard .photo{width:130px;height:95px;object-fit:cover;object-position:top;border-radius:8px;background:var(--surface);border:1px solid var(--line);flex:0 0 auto}
+.scard .pname{font-family:var(--display);font-weight:700;font-size:1.25rem;line-height:1.1;margin-bottom:4px}
+.scard .top .big small{font-size:.8rem;color:var(--muted);letter-spacing:.06em}
+.evo-h{display:flex;align-items:center;gap:10px;width:100%;font:inherit;font-family:var(--display);font-weight:600;font-size:1.1rem;letter-spacing:.04em;border:0;border-radius:10px;padding:10px 14px;background:var(--ink);color:var(--bg);cursor:pointer}
+.evo-h .t{flex:1;text-align:center}
+.evo-h svg{width:18px;height:18px;flex:0 0 auto}
+.evo-h .chev2{transition:transform .12s}
+.evo-h[aria-expanded="false"] .chev2{transform:rotate(180deg)}
+svg.evo{display:block;width:100%;height:auto}
+svg.evo text{font-family:var(--body);font-size:12px;fill:var(--muted)}
+svg.evo .g{stroke:var(--line);stroke-width:1}
+svg.evo .gq{stroke:var(--muted);stroke-width:1.5;opacity:.6}
+svg.evo .ln{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+svg.evo .ar{fill:var(--accent-soft)}
+@media (max-width:820px){
+  .lrow{grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"r who v" ". d d"}
+  .lrow>:nth-child(1){grid-area:r}.lrow>:nth-child(2){grid-area:who}.lrow>:nth-child(3){grid-area:v;text-align:right}.lrow>:nth-child(4){grid-area:d}
+  .lrow.head{display:none}
+  .lnrow{grid-template-columns:28px minmax(0,1fr) auto 18px;grid-template-areas:none}
+  .lnrow>*{grid-area:auto!important}.lnrow>.big{text-align:right}
+  .lnrow>.scard{grid-column:1/-1!important}
+  .irow{grid-template-columns:minmax(0,1fr) auto}.irow>:nth-child(3){grid-column:1/-1}
+}
+.injwrap{display:grid;gap:16px}
+.gamelane{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gamehead{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:.02em}
+.gamehead .logo{width:28px;height:28px}
+.gamehead .small{margin-left:auto;font-family:var(--body);font-weight:500}
+.lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.lanes.others{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.lanes.others .lane{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.lane{min-width:0}
+.gamelane .lane+.lane{border-left:1px solid var(--line)}
+.lanehead{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg);font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:.03em}
+.lanehead .logo,.lanehead .badge{width:24px;height:24px;font-size:.6rem}
+.lanehead .small{font-family:var(--body);font-weight:500;letter-spacing:0}
+.lanecount{margin-left:auto}
+.lanebody{display:grid;gap:0;padding:4px 14px 10px}
+.icard{padding:8px 0;border-top:1px solid var(--line)}
+.icard:first-child{border-top:0}
+.ihead{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;list-style:none}
+.ihead::-webkit-details-marker{display:none}
+.ihead .name::before{content:"▸";display:inline-block;width:1em;color:var(--muted);transition:transform .12s}
+.icard[open] .ihead .name::before{transform:rotate(90deg)}
+.idetail{display:grid;gap:3px;padding:6px 0 2px 1em}
+.ihead .name{font-weight:600}
+/* phone: keep away and home side by side, with tighter lanes */
+@media (max-width:640px){
+  .lanes.others{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .lanehead{padding:6px 8px;gap:6px;font-size:.95rem}
+  .lanehead .side{display:none}
+  .lanebody{padding:2px 8px 6px}
+  .ihead{flex-wrap:wrap;gap:2px 6px}
+  .ihead .name{font-size:.9rem;min-width:0;overflow-wrap:anywhere}
+  .ihead .pill{font-size:.7rem;padding:1px 6px}
+  .idetail{padding-left:0}
+}
+#fresh{text-align:right}
+#fresh b{color:var(--ink);font-weight:600}
+@media (max-width:640px){#fresh{text-align:left}}
+.deadline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:12px 16px;border-radius:10px;background:var(--ink);color:var(--bg)}
+.deadline .dl-label{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:.85rem;font-weight:600;opacity:.75}
+.deadline .dl-time{font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1;letter-spacing:.02em}
+.deadline .dl-left{font-family:var(--display);font-size:1.15rem;font-weight:700;color:var(--accent);margin-left:auto}
+.deadline .dl-note{font-size:.85rem;opacity:.75;flex-basis:100%}
+.deadline.passed .dl-left{color:inherit;opacity:.75}
+/* slate */
+.slate{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.game{flex:0 0 auto;min-width:190px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.game[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.game .teams{font-family:var(--display);font-size:1.3rem;font-weight:700;letter-spacing:.02em}
+.game .meta{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--warn-soft);color:var(--warn)}
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+input[type=search],input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.chk{display:flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+button.btn{font:inherit;font-weight:600;border:0;border-radius:8px;padding:7px 14px;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:4px 10px;cursor:pointer}
+/* board */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:grid;grid-template-columns:34px minmax(0,2.3fr) 90px 92px minmax(0,1.3fr) 104px minmax(0,1.6fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.row.head{border-top:0;font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--muted);font-weight:600;padding-block:8px}
+.row.item{cursor:pointer}
+.row.item:hover{background:var(--bg)}
+.rank{font-family:var(--display);font-size:1.2rem;font-weight:700;color:var(--muted);text-align:right}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.badge{width:38px;height:38px;border-radius:50%;background:var(--bg);color:var(--muted);flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.03em}
+.who .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .sub{font-size:.8rem;color:var(--muted)}
+.exp{font-family:var(--display);font-size:1.7rem;font-weight:700;line-height:1;color:var(--accent)}
+.exp small{display:block;font-family:var(--body);font-size:.72rem;font-weight:500;color:var(--muted)}
+.pill{display:inline-block;font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.q{background:var(--warn-soft);color:var(--warn)}
+.pill.out{background:var(--bad-soft);color:var(--bad)}
+.form{font-size:.85rem;display:grid;gap:1px}
+.form b{font-weight:600}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:.74rem;padding:1px 6px;border-radius:4px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.vsline{flex-basis:100%;font-size:.8rem;font-variant-numeric:tabular-nums}
+.vsline b{font-weight:600}
+.chip.pos{color:var(--ok);background:var(--ok-soft)} .chip.neg{color:var(--bad);background:var(--bad-soft)}
+.row.outrow .exp{color:var(--muted)}
+.detail{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:6px 0 4px;cursor:auto}
+.detail h3{font-size:1rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;color:var(--muted)}
+.detail table{border-collapse:collapse;font-size:.85rem;width:100%}
+.detail td,.detail th{padding:2px 6px 2px 0;text-align:left;white-space:nowrap}
+.detail th{font-weight:600;color:var(--muted)}
+.detail td.muted{white-space:normal}
+.gl{overflow-x:auto}
+.empty{padding:28px 14px;text-align:center;color:var(--muted)}
+.method{font-size:.9rem;color:var(--muted);max-width:75ch;display:grid;gap:8px}
+.method h2{color:var(--ink)}
+.method p{margin:0}
+svg.spark{display:block;width:100%;max-width:104px;height:30px}
+@media (max-width:820px){
+  .row.head{display:none}
+  .row{grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"r who exp" ". st spark" ". form form" ". chips chips";row-gap:6px}
+  .row>.rank{grid-area:r}.row>.who{grid-area:who}.row>.expc{grid-area:exp}.row>.st{grid-area:st}.row>.form{grid-area:form}.row>.sp{grid-area:spark;justify-self:end;width:104px}.row>.chips{grid-area:chips}
+  .detail{grid-column:1/-1;grid-row:auto}
+}
+@media (prefers-reduced-motion:no-preference){.row.item{transition:background .12s}}
+/* schedule */
+select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sday{display:grid;gap:10px}
+.sday h2{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0}
+.sday h2 .small{font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:500}
+.sday h2 .tag{background:var(--accent-soft);color:var(--accent)}
+.sched{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.sgame{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px}
+.sgame .line{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.sgame .line .logo,.sgame .line .badge{width:24px;height:24px;font-size:.6rem}
+.sgame .line .rec{font-family:var(--body);font-weight:500;font-size:.8rem;color:var(--muted);letter-spacing:0}
+.sgame .line .pts{margin-left:auto;padding-left:14px}
+.sgame .line.loss{color:var(--muted)}
+.sgame .meta{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px;border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+.sgame .meta b{color:var(--ink);font-weight:600}
+.sgame .meta .live{color:var(--bad);font-weight:600}
+/* rosters */
+.tpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px}
+.tpick button{font:inherit;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.03em;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 4px;display:grid;justify-items:center;gap:2px;cursor:pointer}
+.tpick button .logo,.tpick button .badge{width:28px;height:28px;font-size:.6rem}
+.tpick button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.tpick button.plays{background:var(--accent-soft)}
+.teamhead .sub{margin-left:auto;font-family:var(--body);font-weight:500;font-size:.85rem;color:var(--muted);letter-spacing:0;text-align:right}
+.rrow{display:grid;grid-template-columns:38px minmax(0,2.2fr) 50px 64px 54px minmax(0,1fr) 130px;gap:12px;align-items:center;padding:9px 14px;border-top:1px solid var(--line);font-size:.9rem}
+.rrow.head{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--muted);font-weight:600;padding-block:8px}
+.rrow .jersey{font-family:var(--display);font-size:1.2rem;font-weight:700;color:var(--muted);text-align:right}
+.rrow .name{font-weight:600}
+.rrow .sub{font-size:.8rem;color:var(--muted)}
+.rrow .tt b{font-family:var(--display);font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1}
+.rrow .tt span{font-size:.75rem;color:var(--muted);margin-left:4px}
+.rrow .tt .small{font-size:.75rem}
+#rq{width:min(100%,320px)}
+.rrow .tt b.muted{color:var(--muted)}
+.rrow[data-pid]{cursor:pointer}
+.rrow[data-pid]:hover{background:var(--bg)}
+a.plink{color:inherit;text-decoration:none}
+a.plink:hover{text-decoration:underline}
+/* player page */
+.back{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;justify-self:start}
+.back:hover{color:var(--ink)}
+.phead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.phead .logo,.phead .badge{width:56px;height:56px}
+.phead h2{font-size:1.9rem;text-transform:none;letter-spacing:.01em;margin:0}
+.phead .sub{color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
+.card h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em}
+.card .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.ptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.ptile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ptile b{display:block;font-family:var(--display);font-size:2rem;font-weight:700;line-height:1;color:var(--accent)}
+.ptile span{font-size:.8rem;color:var(--muted)}
+table.stats{border-collapse:collapse;font-size:.88rem;width:100%;font-variant-numeric:tabular-nums}
+table.stats th,table.stats td{padding:6px 8px;text-align:right;white-space:nowrap;border-top:1px solid var(--line)}
+table.stats th{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:.78rem;color:var(--muted);font-weight:600;border-top:0}
+table.stats th:first-child,table.stats td:first-child,table.stats td.l,table.stats th.l{text-align:left}
+table.stats td.tt{font-weight:700;color:var(--accent)}
+table.stats tr.go{cursor:pointer}
+table.stats tr.go:hover td{background:var(--bg)}
+table.stats tr.sel td{background:var(--accent-soft)}
+.seg{display:flex;gap:6px}
+.seg button{font:inherit;font-family:var(--display);font-weight:700;font-size:1rem;letter-spacing:.04em;min-width:58px;padding:5px 12px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.shotwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.shotwrap>*{min-width:0}
+svg.court{display:block;width:100%;height:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+svg.court .ln{fill:none;stroke:var(--muted);stroke-width:1.2;opacity:.6}
+svg.court .mk{cursor:pointer}
+svg.court .made{fill:var(--accent)}
+svg.court .miss{stroke:var(--muted);stroke-width:1.6;fill:none}
+svg.court .hit{fill:transparent}
+svg.court .dim{opacity:.12}
+svg.court .on .made{stroke:var(--ink);stroke-width:1.5}
+svg.court .on .miss{stroke:var(--ink);stroke-width:2.4}
+.shotinfo{font-size:.88rem;min-height:1.3em}
+.stiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stile{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.stile span{display:block;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stile b{display:block;margin-top:4px;font-family:var(--display);font-size:1.35rem;font-weight:700;background:var(--accent);color:#fff;border-radius:6px;padding:2px 0}
+.stile.alt b{background:none;color:var(--ink);border:1px solid var(--line)}
+table.zones tr{cursor:pointer}
+table.zones tr:hover td{background:var(--bg)}
+table.zones tr.sel td{background:var(--accent-soft)}
+table.zones td.up{color:var(--ok);font-weight:600} table.zones td.down{color:var(--bad);font-weight:600}
+.ptabs{flex-wrap:wrap}
+a.glink{color:inherit;text-decoration:none;cursor:pointer}
+a.glink:hover{border-color:var(--accent)}
+a.glink .more{font-size:.78rem;color:var(--accent);font-weight:600}
+.ghead{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 18px;text-align:center}
+.ghead .gteam{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.4rem;letter-spacing:.02em}
+.ghead .gteam .logo,.ghead .gteam .badge{width:48px;height:48px}
+.ghead .gscore{font-family:var(--display);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.ghead .loss{color:var(--muted)}
+.ghead .gmeta{flex-basis:100%;color:var(--muted);font-size:.9rem}
+table.stats td.pl{text-align:left;white-space:nowrap}
+table.stats td.pl a{color:inherit;text-decoration:none;font-weight:600}
+table.stats td.pl a:hover{text-decoration:underline}
+table.stats tr.dnp td{color:var(--muted)}
+.card h3 .logo,.card h3 .badge{width:28px;height:28px;margin-right:6px;vertical-align:-6px}
+.st5{font-size:.7rem;color:var(--muted);margin-left:4px;letter-spacing:.04em}
+table.pbp td{vertical-align:top}
+table.pbp td.tx{text-align:left;white-space:normal}
+table.pbp td.ck span{display:block;font-size:.72rem;color:var(--muted)}
+table.stats td .sh{display:none}
+.st5{display:inline-block;font-size:.65rem;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 3px;margin-left:5px;line-height:1.3}
+.ptiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gl table.stats td:first-child,.gl table.stats th:first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+.gl table.stats tr.sel td:first-child{background:var(--accent-soft)}
+.gl table.stats tr.grp td:first-child{background:var(--bg)}
+.ptabs button{white-space:nowrap}
+.tabs6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.tabs4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.vsbar .seg button{white-space:nowrap;min-width:0}
+@media (max-width:640px){.vsbar .seg button{font-size:.88rem;padding:4px 8px}}
+.ptiles.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.h2h{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px}
+.h2h b{display:block;font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1;color:var(--accent)}
+.h2h .mid b{color:var(--ink);font-size:1.2rem}
+.h2h span{font-size:.75rem;color:var(--muted)}
+.seg .phone{display:none}.seg .sepx{flex:0 0 8px}
+.gl.lines{max-width:520px;justify-self:center;width:100%}
+@media (max-width:640px){
+  .tabs6{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ptiles.four{gap:4px}.ptiles.four .ptile{padding:6px 6px}.ptiles.four .ptile b{font-size:1.2rem}.ptiles.four .ptile span{font-size:.66rem}
+  .seg .phone{display:inline-block}.seg .phone.sepx{display:block}
+  .shotwrap[data-v="court"] .zonepane,.shotwrap[data-v="zones"] .courtpane{display:none!important}
+  .shotwrap .zonepane p.small{display:none}
+}
+@media (max-width:640px){
+  .card{padding:10px;gap:8px}
+  .card h3{font-size:1.02rem}
+  table.stats{font-size:.8rem}
+  table.stats th,table.stats td{padding:5px 5px}
+  table.stats th{font-size:.7rem;letter-spacing:.04em}
+  table.stats td .lg{display:none} table.stats td .sh{display:inline}
+  .phead{flex-wrap:nowrap;gap:10px}.phead .logo,.phead .badge{width:40px;height:40px}.phead .sub{font-size:.8rem}
+  .ptiles{gap:6px}.ptile{padding:7px 9px}.ptile b{font-size:1.35rem}.ptile span{font-size:.72rem;line-height:1.25;display:block;margin-top:2px}
+  .ptabs{gap:4px}.ptabs button{font-size:.92rem;padding:6px 2px;flex:1}
+  .ghead{flex-wrap:nowrap;gap:8px}.ghead .gteam{font-size:1.05rem;gap:6px}.ghead .gteam .logo,.ghead .gteam .badge{width:32px;height:32px}.ghead .gscore{font-size:1.8rem}
+  .ghead{display:grid;grid-template-columns:1fr auto 1fr}.ghead .gteam:first-child{justify-self:end}.ghead .gteam:nth-child(3){justify-self:start}.ghead .gmeta{grid-column:1/-1}
+  .vsbar{margin-bottom:4px;gap:6px 8px}.vsbar select{flex:1;min-width:0}
+  .card .bar select{max-width:60%}
+  .stiles{gap:5px}.stile{padding:5px}.stile span{font-size:.68rem}
+}
+table.pbp tr.sc td.tx{font-weight:600}
+table.pbp .chip{margin-left:4px}
+table.pbp td.tm{text-align:left}
+.ptabs button{min-width:0}
+.vsbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}
+table.stats td.up{color:var(--ok);font-weight:600} table.stats td.down{color:var(--bad);font-weight:600}
+table.stats tr.grp td{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:.74rem;color:var(--muted);font-weight:600;background:var(--bg)}
+table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
+@media (max-width:820px){.shotwrap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.phead h2{font-size:1.5rem}.ptile b{font-size:1.6rem}.stile b{font-size:1.15rem}.seg button{min-width:0;flex:1}}
+@media (max-width:640px){
+  .tpick{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  .tpick button{padding:4px 2px;font-size:.72rem}
+  .tpick button .logo,.tpick button .badge{width:22px;height:22px}
+}
+.rrow .bio{display:none}
+@media (max-width:820px){
+  .rrow{grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"j who tt" ". bio st";row-gap:2px}
+  .rrow.head{display:none}
+  .rrow>.jersey{grid-area:j}.rrow>.who2{grid-area:who}.rrow>.tt{grid-area:tt;text-align:right}.rrow>.st{grid-area:st;justify-self:end}
+  .rrow>.bio{display:block;grid-area:bio;font-size:.8rem;color:var(--muted)}
+  .rrow>.c-age,.rrow>.c-ht,.rrow>.c-exp{display:none}
+  .teamhead{flex-wrap:wrap}.teamhead .sub{margin-left:0;flex-basis:100%;text-align:left}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" id="eyebrow">TTFL</div>
+      <h1 id="h1">Tonight's picks</h1>
+    </div>
+    <div class="small muted" id="fresh"></div>
+  </header>
+  <div class="deadline" id="deadline" hidden></div>
+  <nav class="menu" aria-label="Sections">
+    <a href="#injuries" data-view="injuries">Injury report</a>
+    <a href="#picks" data-view="picks">Picks</a>
+    <a href="#live" data-view="live">Live</a>
+    <a href="#form" data-view="form">In form</a>
+    <a href="#lastnight" data-view="lastnight">Last night</a>
+    <a href="#schedule" data-view="schedule">Schedule</a>
+    <a href="#rosters" data-view="rosters">Rosters</a>
+  </nav>
+
+  <div class="view" id="view-picks">
+  <div class="notice" id="notice" hidden></div>
+  <section aria-label="Tonight's games"><div class="slate" id="slate"></div></section>
+
+
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search player or team" aria-label="Search player or team">
+    <label class="chk"><input type="checkbox" id="hideOut" checked> Hide players ruled out</label>
+  </div>
+
+  <section class="board" aria-label="Ranked players">
+    <div class="row head"><div>#</div><div>Player</div><div>Expected</div><div>Status</div><div>Form</div><div>Last 10</div><div>Tonight's factors</div></div>
+    <div id="rows"></div>
+  </section>
+
+  <section class="method">
+    <h2>How the ranking works</h2>
+    <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
+    <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
+    <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
+    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
+  </section>
+  </div>
+
+  <div class="view" id="view-injuries" hidden>
+    <div class="controls">
+      <input type="search" id="iq" placeholder="Search player or team" aria-label="Search injuries">
+      <label class="chk"><input type="checkbox" id="iNext" checked> Only teams playing on <span id="iNextLabel">the next night</span></label>
+    </div>
+    <div class="injwrap" id="injList"></div>
+    <p class="small muted" id="injNote"></p>
+  </div>
+
+  <div class="view" id="view-form" hidden>
+    <p class="muted" id="formIntro"></p>
+    <div class="controls">
+      <input type="search" id="fq" placeholder="Search player or team" aria-label="Search in-form players">
+      <label class="chk"><input type="checkbox" id="fNext"> Only players in the next games</label>
+    </div>
+    <div class="list" id="formList"></div>
+  </div>
+
+  <div class="view" id="view-lastnight" hidden>
+    <h2 id="lnTitle">Last night</h2>
+    <div class="scores" id="lnScores"></div>
+    <div class="list" id="lnList"></div>
+  </div>
+
+  <div class="view" id="view-live" hidden>
+    <h2 id="lvTitle">Live TTFL scores</h2>
+    <div class="livebar">
+      <button class="btn" type="button" id="lvRefresh">Refresh now</button>
+      <label class="chk"><input type="checkbox" id="lvAuto" checked> Auto-refresh</label>
+      <span class="st" id="lvStatus" role="status" aria-live="polite"></span>
+    </div>
+    <div class="controls"><input type="search" id="lvq" placeholder="Search player or team" aria-label="Search player or team"></div>
+    <div class="scores" id="lvScores"></div>
+    <div class="list" id="lvList"></div>
+  </div>
+
+  <div class="view" id="view-schedule" hidden>
+    <div class="controls">
+      <select id="sTeam" aria-label="Filter by team"><option value="">All teams</option></select>
+      <span class="small muted" id="sNote"></span>
+    </div>
+    <div class="injwrap" id="schedList"></div>
+  </div>
+
+  <div class="view" id="view-rosters" hidden>
+    <div class="controls">
+      <input type="search" id="rq" placeholder="Search a player in every roster" aria-label="Search rosters">
+    </div>
+    <div class="tpick" id="tpick" role="group" aria-label="Teams"></div>
+    <div class="list" id="rosterList"></div>
+    <p class="small muted">Tap a player for his game log, stats and shot chart. Highlighted teams play on the next night. TTFL avg is the average score per game played this regular season, with last season below. Rosters and injuries from ESPN.</p>
+  </div>
+
+  <div class="view" id="view-player" hidden>
+    <a class="back" href="#rosters" id="pBack">← Rosters</a>
+    <div class="view" id="playerBody"></div>
+  </div>
+
+  <div class="view" id="view-game" hidden>
+    <a class="back" href="#rosters" id="gBack">← Back</a>
+    <div class="view" id="gameBody"></div>
+  </div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const state = {game:null, open:new Set(), lnOpen:new Set(), evoClosed:new Set()};
+
+// ---- scoring ----
+// row: [date, opp, home, min, pts, reb, ast, stl, blk, fgm, fga, tpm, tpa, ftm, fta, to]
+function ttfl(r){
+  return r[4]+r[5]+r[6]+r[7]+r[8]+r[9]+r[11]+r[13]-r[15]-(r[10]-r[9])-(r[12]-r[11])-(r[14]-r[13]);
+}
+const mean = (a, f) => a.length ? a.reduce((s, r) => s + f(r), 0) / a.length : null;
+
+function injuryInfo(inj){
+  if (!inj) return {label:"Available", cls:"ok", prob:1};
+  const st = (inj.status || "").toLowerCase(), txt = (inj.short || "").toLowerCase();
+  if (st === "out") return {label:"Out", cls:"out", prob:0};
+  const m = txt.match(/\b(ruled out|won't play|will not play|out for|doubtful|questionable|probable|game-time decision)\b/);
+  const w = m ? m[1] : st;
+  if (/ruled out|won't play|will not play|out for/.test(w)) return {label:"Out", cls:"out", prob:0};
+  if (w === "doubtful") return {label:"Doubtful", cls:"out", prob:.2};
+  if (w === "questionable" || w === "game-time decision") return {label:"Questionable", cls:"q", prob:.55};
+  if (w === "probable") return {label:"Probable", cls:"ok", prob:.95};
+  return {label:"Day-to-day", cls:"q", prob:.75};
+}
+
+function teamNumbers(abbr){
+  const t = DATA.teams[abbr]; if (!t) return null;
+  const w = Math.min(t.cur.gp, 15) / 15;
+  const mix = k => t.cur.gp && t.prev.gp ? w * t.cur[k] + (1 - w) * t.prev[k] : (t.cur.gp ? t.cur[k] : t.prev[k]);
+  return {pf: mix("pf"), pa: mix("pa")};
+}
+let LG = 115;
+function leagueAvg(){
+  const v = Object.keys(DATA.teams).map(teamNumbers).filter(x => x && x.pf);
+  if (v.length) LG = v.reduce((s, x) => s + x.pf, 0) / v.length;
+}
+
+function gameFor(team){ return DATA.games.find(g => g.home === team || g.away === team); }
+
+function base(p){
+  const cur = p.cur.filter(r => r[3] > 0), prev = p.prev.filter(r => r[3] > 0);
+  const all = [...p.cur, ...p.post, ...p.prev].filter(r => r[3] > 0).sort((a, b) => a[0] < b[0] ? 1 : -1);
+  if (!all.length) return null;
+  const w = Math.min(cur.length, 15) / 15;
+  const blend = f => cur.length && prev.length ? w * mean(cur, f) + (1 - w) * mean(prev, f) : mean(cur.length ? cur : prev.length ? prev : all, f);
+  const L10 = all.slice(0, 10), L5 = all.slice(0, 5);
+  const season = blend(ttfl), l10 = mean(L10, ttfl), l5 = mean(L5, ttfl);
+  const sMin = blend(r => r[3]), l5Min = mean(L5, r => r[3]);
+  return {all, L10, season, l10, l5, form: .5 * season + .3 * l10 + .2 * l5, sMin, l5Min, gp: cur.length || prev.length || all.length};
+}
+
+function project(p, outMinByTeam){
+  const b = base(p), inj = injuryInfo(p.inj), g = gameFor(p.team);
+  const home = g && g.home === p.team, opp = g ? (home ? g.away : g.home) : "";
+  const res = {p, b, inj, g, home, opp, factors:[], mult:1};
+  if (!b || !g) { res.proj = null; res.exp = -1; return res; }
+  const add = (label, m, note) => { res.factors.push({label, m, note, pts: b.form * res.mult * (m - 1)}); res.mult *= m; };
+  // matchup: expected team points vs league average
+  let teamPts, how;
+  if (g.overUnder && g.spread != null && g.favorite) {
+    teamPts = g.overUnder / 2 + (g.favorite === p.team ? g.spread / 2 : -g.spread / 2); how = "betting line";
+  } else {
+    const me = teamNumbers(p.team), them = teamNumbers(opp);
+    if (me && them && me.pf && them.pa) { teamPts = (me.pf + them.pa) / 2; how = "season scoring"; }
+  }
+  if (teamPts) add("Matchup", 1 + .8 * (teamPts / LG - 1), `${p.team} expected ${teamPts.toFixed(1)} pts (${how}), league avg ${LG.toFixed(1)}`);
+  add(home ? "Home" : "Away", home ? 1.015 : .985, home ? "Home game" : "Road game");
+  if (g.b2b && g.b2b.includes(p.team)) add("Back-to-back", .95, `${p.team} played yesterday`);
+  if (g.spread != null && g.spread >= 10 && b.sMin >= 24) add("Blowout risk", .95, `Spread ${g.spread}: starters may sit late`);
+  const om = outMinByTeam[p.team];
+  if (om && om.min >= 15 && b.sMin >= 20) {
+    const own = om.names.includes(p.name) ? 0 : 1;
+    if (own) add("Teammates out", 1 + Math.min(.10, om.min * .0015), `Out: ${om.names.join(", ")}`);
+  }
+  res.proj = b.form * res.mult;
+  res.exp = res.proj * inj.prob;
+  const vs = b.all.filter(r => r[1] === opp);
+  res.vs = vs.length ? {rows: vs, n: vs.length, avg: mean(vs, ttfl)} : null;
+  return res;
+}
+
+const DAY_FMT = {day:"numeric", month:"short"};
+const fmtDay = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(undefined, DAY_FMT);
+const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+
+function logoImg(abbr){
+  const l = DATA.logos && DATA.logos[abbr];
+  if (!l || !l.light) return `<span class="badge" aria-hidden="true">${esc(abbr)}</span>`;
+  return `<img class="logo l" src="${l.light}" alt="" aria-hidden="true"><img class="logo d" src="${l.dark || l.light}" alt="" aria-hidden="true">`;
+}
+
+function vsLine(r){
+  if (!r.b) return "";
+  if (!r.vs) return r.opp ? `<div class="vsline muted">No games vs ${esc(r.opp)} since ${DATA.prevSeason}</div>` : "";
+  const sc = r.vs.rows.slice(0, 6).map(g => { const v = ttfl(g); return `<b class="${v >= r.b.season ? "up" : "down"}" title="${fmtDay(g[0])}">${v}</b>`; }).join(" ");
+  return `<div class="vsline">vs ${esc(r.opp)}: ${sc}${r.vs.n > 6 ? " …" : ""} <span class="muted">· avg ${f1(r.vs.avg)} in ${r.vs.n}</span></div>`;
+}
+
+// ---- rendering ----
+function spark(vals, ref){
+  if (!vals.length) return "";
+  const v = vals.slice().reverse(), w = 104, h = 30, max = Math.max(60, ...v), min = Math.min(0, ...v);
+  const x = i => v.length === 1 ? w / 2 : 3 + i * (w - 6) / (v.length - 1), y = s => h - 3 - (s - min) / (max - min) * (h - 6);
+  const pts = v.map((s, i) => `${x(i).toFixed(1)},${y(s).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="Last ${v.length} TTFL scores: ${v.map(Math.round).join(", ")}">
+    <line x1="0" x2="${w}" y1="${y(ref).toFixed(1)}" y2="${y(ref).toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 3"/>
+    <polyline points="${pts}" fill="none" stroke="var(--spark)" stroke-width="1.6"/>
+    <circle cx="${x(v.length - 1)}" cy="${y(v[v.length - 1])}" r="3" fill="var(--accent)"/></svg>`;
+}
+const f1 = v => v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1);
+const pts = v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+const pct = m => (m >= 1 ? "+" : "") + Math.round((m - 1) * 100) + "%";
+
+function detail(r){
+  const b = r.b, p = r.p;
+  const injHtml = p.inj ? `<p class="small"><b>${esc(p.inj.status)}</b>${p.inj.detail ? " · " + esc(p.inj.detail) : ""}${p.inj.date ? " · " + fmtDay(p.inj.date.slice(0, 10)) : ""}<br>${esc(p.inj.short || "")}</p>` : `<p class="small muted">Not on the injury report.</p>`;
+  const fac = r.factors.map(f => `<tr><td>${esc(f.label)}</td><td class="num">${pts(f.pts)}</td><td class="muted">${esc(f.note)}</td></tr>`).join("");
+  const games = b ? b.all.slice(0, 10).map(g => `<tr><td>${fmtDay(g[0])}</td><td>${g[2] ? "vs" : "@"} ${esc(g[1])}</td><td class="num">${Math.round(g[3])}</td><td class="num">${g[4]}/${g[5]}/${g[6]}</td><td class="num">${g[9]}-${g[10]}</td><td class="num">${g[15]}</td><td class="num"><b>${ttfl(g)}</b></td></tr>`).join("") : "";
+  return `<div class="detail" data-stop>
+    <div>${ROSTER_BY_ID()[p.id] ? `<p class="small"><a href="#player-${esc(p.id)}">Player page: game log, stats and shot chart →</a></p>` : ""}<h3>Injury report</h3>${injHtml}
+      <h3 style="margin-top:12px">Projection</h3>
+      <table><tr><td>Form</td><td class="num">${f1(b && b.form)}</td><td class="muted">season ${f1(b && b.season)} · L10 ${f1(b && b.l10)} · L5 ${f1(b && b.l5)}</td></tr>${fac}
+      <tr><td><b>Projection</b></td><td class="num"><b>${f1(r.proj)}</b></td><td class="muted">× ${Math.round(r.inj.prob * 100)}% chance to play = ${f1(Math.max(r.exp, 0))}</td></tr></table></div>
+    ${r.vs ? `<div class="gl"><h3>Against ${esc(r.opp)}</h3><table><tr><th>Date</th><th></th><th>Min</th><th>P/R/A</th><th>FG</th><th>TO</th><th>TTFL</th></tr>${r.vs.rows.map(g => `<tr><td>${new Date(g[0] + "T12:00:00Z").toLocaleDateString(undefined, {day:"numeric", month:"short", year:"2-digit"})}</td><td>${g[2] ? "home" : "away"}</td><td class="num">${Math.round(g[3])}</td><td class="num">${g[4]}/${g[5]}/${g[6]}</td><td class="num">${g[9]}-${g[10]}</td><td class="num">${g[15]}</td><td class="num"><b>${ttfl(g)}</b></td></tr>`).join("")}</table></div>` : ""}
+    <div class="gl"><h3>Last 10 games</h3>${games ? `<table><tr><th>Date</th><th>Opp</th><th>Min</th><th>P/R/A</th><th>FG</th><th>TO</th><th>TTFL</th></tr>${games}</table>` : `<p class="small muted">No NBA games yet.</p>`}</div>
+  </div>`;
+}
+
+function render(){
+  const q = norm($("#q").value || ""), hideOut = $("#hideOut").checked;
+  // minutes freed by ruled-out teammates
+  const outMin = {};
+  for (const p of DATA.players) {
+    const i = injuryInfo(p.inj); if (i.prob > .25) continue;
+    const b = base(p); if (!b || b.sMin < 15) continue;
+    (outMin[p.team] ||= {min:0, names:[]}); outMin[p.team].min += b.sMin; outMin[p.team].names.push(p.name);
+  }
+  let rows = DATA.players.map(p => project(p, outMin));
+  rows = rows.filter(r => {
+    if (state.game && !(r.g && r.g.id === state.game)) return false;
+    if (hideOut && r.inj.prob === 0) return false;
+    if (q && !norm(r.p.name + r.p.team).includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.exp - a.exp || (b.b ? 1 : 0) - (a.b ? 1 : 0));
+  let rank = 0;
+  $("#rows").innerHTML = rows.length ? rows.map(r => {
+    const p = r.p, b = r.b;
+    if (r.inj.prob > 0 && b) rank++;
+    const shownRank = (r.inj.prob > 0 && b) ? rank : "";
+    const trend = b && b.sMin ? b.l5Min / b.sMin : 1;
+    const tr = !b ? "" : trend >= 1.08 ? `<span class="up">▲ ${Math.round(b.l5Min)} min</span>` : trend <= .92 ? `<span class="down">▼ ${Math.round(b.l5Min)} min</span>` : `${Math.round(b.l5Min)} min`;
+    const chips = r.factors.filter(f => Math.abs(f.pts) >= .05).map(f => `<span class="chip ${f.pts > 0 ? "pos" : "neg"}" title="${esc(f.note)} (${pct(f.m)})">${esc(f.label)} ${pts(f.pts)} TTFL</span>`).join("")
+
+      + (b && b.gp < 10 ? `<span class="chip">Only ${b.gp} games</span>` : "");
+    const open = state.open.has(p.id);
+    return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
+      <div class="rank num">${shownRank}</div>
+      <div class="who">${logoImg(p.team)}
+        <div style="min-width:0"><div class="name">${esc(p.name)}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
+      <div class="expc"><div class="exp num">${b ? f1(Math.max(r.exp, 0)) : "–"}<small>${b ? "proj " + f1(r.proj) : "no NBA games"}</small></div></div>
+      <div class="st"><span class="pill ${r.inj.cls}">${r.inj.label}</span></div>
+      <div class="form num">${b ? `<span>Season <b>${f1(b.season)}</b> · L10 <b>${f1(b.l10)}</b> · L5 <b>${f1(b.l5)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
+      <div class="sp">${b ? spark(b.L10.map(ttfl), b.season) : ""}</div>
+      <div class="chips">${chips}${vsLine(r)}</div>
+      ${open ? detail(r) : ""}
+    </div>`;
+  }).join("") : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
+}
+
+function renderSlate(){
+  $("#slate").innerHTML = DATA.games.map(g => {
+    const t = parisClock(new Date(g.time));
+    const b2b = (g.b2b || []).map(x => `<span class="tag">${esc(x)} back-to-back</span>`).join(" ");
+    return `<button type="button" class="game" data-game="${esc(g.id)}" aria-pressed="${state.game === g.id}">
+      <span class="teams">${logoImg(g.away)}${esc(g.away)} <span class="muted">@</span> ${logoImg(g.home)}${esc(g.home)}</span>
+      <span class="meta"><span>${t}</span>${g.oddsText ? `<span>${esc(g.oddsText)}</span>` : ""}${g.overUnder ? `<span>O/U ${g.overUnder}</span>` : ""}</span>
+      ${b2b ? `<span>${b2b}</span>` : ""}</button>`;
+  }).join("") || `<div class="muted">No NBA games on this date.</div>`;
+}
+
+// ---- pick deadline (Paris time) ----
+// Deadline = first tip-off of the night, unless that is at or after midnight in Paris: then midnight.
+const TZ = "Europe/Paris";
+const parisClock = t => new Intl.DateTimeFormat(undefined, {timeZone: TZ, hour:"2-digit", minute:"2-digit", hourCycle:"h23"}).format(t);
+function parisParts(t){
+  const o = {}; new Intl.DateTimeFormat("en-GB", {timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit", hourCycle:"h23"})
+    .formatToParts(t).forEach(p => o[p.type] = p.value);
+  return o;
+}
+function parisMidnightAfter(t){ // the first 00:00 Paris time after instant t
+  const p = parisParts(t);
+  const guess = Date.UTC(+p.year, +p.month - 1, +p.day + 1);
+  const q = parisParts(guess); // Paris clock at that UTC instant: shift back by its offset
+  const off = Date.UTC(+q.year, +q.month - 1, +q.day, +q.hour, +q.minute) - guess;
+  return new Date(guess - off);
+}
+function deadlineInfo(){
+  if (!DATA.games.length) return null;
+  const first = DATA.games.reduce((a, g) => new Date(g.time) < new Date(a.time) ? g : a);
+  const tip = new Date(first.time);
+  // midnight that starts the Paris day of the night: the midnight after 12:00 Paris on the slate date
+  const noon = new Date(DATA.date + "T10:00:00Z");
+  const midnight = parisMidnightAfter(noon);
+  const atMidnight = tip >= midnight;
+  return {when: atMidnight ? midnight : tip, atMidnight, first};
+}
+function renderDeadline(){
+  const d = deadlineInfo(), el = $("#deadline");
+  if (!d) { el.hidden = true; return; }
+  const fmt = new Intl.DateTimeFormat(undefined, {timeZone: TZ, weekday:"long", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"});
+  const ms = d.when - Date.now(), passed = ms <= 0;
+  const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+  const left = passed ? "Deadline passed" : (h ? `${h} h ${String(m).padStart(2, "0")} min left` : `${m} min left`);
+  el.hidden = false; el.classList.toggle("passed", passed);
+  el.innerHTML = `<span class="dl-label">Pick deadline</span><span class="dl-time">${esc(parisClock(d.when))}</span><span class="dl-left">${left}</span>
+    <span class="dl-note">${d.atMidnight ? `first game (${esc(d.first.away)} @ ${esc(d.first.home)}) starts at ${esc(parisClock(new Date(d.first.time)))}, so picks close at midnight` : `picks close when ${esc(d.first.away)} @ ${esc(d.first.home)} tips off`}</span>`;
+}
+
+// ---- other views ----
+const fmtLong = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long"});
+const nextTeams = () => new Set(DATA.games.flatMap(g => [g.home, g.away]));
+const statLine = r => `${r[4]} pts · ${r[5]} reb · ${r[6]} ast${r[7] ? " · " + r[7] + " stl" : ""}${r[8] ? " · " + r[8] + " blk" : ""} · ${r[9]}/${r[10]} FG · ${r[11]}/${r[12]} 3PT · ${r[13]}/${r[14]} FT · ${r[15]} TO · ${Math.round(r[3])} min`;
+const STATUS_ORDER = {out:0, q:1, ok:2};
+
+function injCard(i){
+  const info = injuryInfo(i);
+  return `<details class="icard"><summary class="ihead"><span class="name">${esc(i.name)}</span><span class="pill ${info.cls}">${info.label}</span></summary>
+    <div class="idetail"><div class="small muted">${esc(i.pos || "")}${i.detail ? " · " + esc(i.detail) : ""}${i.ret ? " · back ~" + fmtDay(i.ret.slice(0, 10)) : ""}</div>
+    ${i.short ? `<div class="small">${esc(i.short)}</div>` : ""}
+    ${i.date ? `<div class="small muted">Updated ${fmtDay(i.date.slice(0, 10))}</div>` : ""}</div></details>`;
+}
+function teamLane(t, items, side){
+  items = items.slice().sort((a, b) => STATUS_ORDER[injuryInfo(a).cls] - STATUS_ORDER[injuryInfo(b).cls] || a.name.localeCompare(b.name));
+  return `<div class="lane"><div class="lanehead">${logoImg(t)}<span>${esc(t)}</span>${side ? `<span class="muted small side">${side}</span>` : ""}<span class="muted small lanecount">${items.length || "No"} injur${items.length === 1 ? "y" : "ies"}</span></div>
+    <div class="lanebody">${items.map(injCard).join("") || `<div class="small muted">Nobody on the injury report.</div>`}</div></div>`;
+}
+function renderInjuries(){
+  const list = DATA.injuryList || [], q = norm($("#iq").value || ""), only = $("#iNext").checked, nt = nextTeams();
+  const rows = list.filter(i => !q || norm((i.name || "") + (i.team || "")).includes(q));
+  const byTeam = {};
+  rows.forEach(i => (byTeam[i.team || "?"] ||= []).push(i));
+  let html = DATA.games.map(g => {
+    if (q && !byTeam[g.home] && !byTeam[g.away]) return "";
+    const t = parisClock(new Date(g.time));
+    return `<section class="gamelane"><div class="gamehead">${logoImg(g.away)}${esc(g.away)} <span class="muted">@</span> ${logoImg(g.home)}${esc(g.home)}<span class="muted small">${t}</span></div>
+      <div class="lanes">${teamLane(g.away, byTeam[g.away] || [], "away")}${teamLane(g.home, byTeam[g.home] || [], "home")}</div></section>`;
+  }).join("");
+  if (!only) {
+    const others = Object.keys(byTeam).filter(t => !nt.has(t)).sort();
+    if (others.length) html += `<h2>Teams not playing</h2><div class="lanes others">${others.map(t => teamLane(t, byTeam[t], "")).join("")}</div>`;
+  }
+  $("#injList").innerHTML = html || `<div class="empty">No injuries match.</div>`;
+  $("#injNote").textContent = `${list.length} players on ESPN's injury report across the league. "Day-to-day" players are labelled questionable, doubtful or probable when the latest news says so.`;
+}
+
+function renderForm(){
+  const rec = DATA.recent || {}, q = norm($("#fq").value || ""), only = $("#fNext").checked, nt = nextTeams();
+  const seasonById = Object.fromEntries(DATA.players.map(p => [p.id, base(p)]));
+  let rows = Object.entries(rec).map(([id, e]) => {
+    const r = e.rows; if (r.length < 2) return null;
+    const avg = mean(r, ttfl), b = seasonById[id];
+    return {id, e, avg, n: r.length, best: Math.max(...r.map(ttfl)), min: mean(r, x => x[3]), season: b ? b.season : null, plays: nt.has(e.team)};
+  }).filter(x => x && (!only || x.plays) && (!q || norm(x.e.name + x.e.team).includes(q)));
+  rows.sort((a, b) => b.avg - a.avg);
+  rows = rows.slice(0, 60);
+  $("#formList").hidden = !Object.keys(rec).length;
+  $("#formIntro").textContent = Object.keys(rec).length
+    ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 2 games). Players in the next games show how that compares with their season average.`
+    : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Picks tab uses last season's form.`;
+  $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + rows.map((x, k) => {
+    const diff = x.season != null ? x.avg - x.season : null;
+    const trend = diff == null ? "" : `<span class="${diff >= 0 ? "up" : "down"}">${diff >= 0 ? "▲ +" : "▼ "}${f1(diff)} vs season</span>`;
+    return `<div class="lrow"><div class="rank num">${k + 1}</div>
+      <div class="who">${logoImg(x.e.team)}<div style="min-width:0"><div class="name">${esc(x.e.name)}</div><div class="sub">${esc(x.e.team)} · ${x.n} games · ${Math.round(x.min)} min${x.plays ? ` · <b>plays next</b>` : ""}</div></div></div>
+      <div><div class="big num">${f1(x.avg)}</div><div class="small muted">best ${x.best}</div></div>
+      <div class="small"><div>${spark(x.e.rows.slice(0, 10).map(ttfl), x.avg)}</div>${trend}</div></div>`;
+  }).join("") : (Object.keys(rec).length ? `<div class="empty">No players match.</div>` : "");
+}
+
+function renderLastNight(){
+  const ln = DATA.lastNight;
+  if (!ln) { $("#lnTitle").textContent = "Last night"; $("#lnScores").innerHTML = ""; $("#lnList").innerHTML = `<div class="empty">No regular-season or playoff games in the last 15 days. Scores show here the morning after the first games.</div>`; return; }
+  $("#lnTitle").textContent = "TTFL scores, " + fmtLong(ln.date);
+  $("#lnScores").innerHTML = ln.games.map(g => {
+    const hw = +g.homeScore > +g.awayScore;
+    const open = (DATA.gamePages || {})[g.id], tag = open ? "a" : "div";
+    return `<${tag} class="score ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}><div class="line ${hw ? "loss" : "win"}">${logoImg(g.away)}${esc(g.away)}<span class="pts">${esc(g.awayScore)}</span></div><div class="line ${hw ? "win" : "loss"}">${logoImg(g.home)}${esc(g.home)}<span class="pts">${esc(g.homeScore)}</span></div>${open ? `<span class="more">Box score →</span>` : ""}</${tag}>`;
+  }).join("");
+  const rows = Object.entries(DATA.recent || {}).flatMap(([id, e]) => e.rows.filter(r => r[0] === ln.date).map(r => ({id, e, r, s: ttfl(r)}))).sort((a, b) => b.s - a.s);
+  $("#lnList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + rows.map((x, k) => {
+    const open = state.lnOpen.has(x.id);
+    return `<div class="lrow lnrow" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
+    <div class="rank num">${k + 1}</div>
+    <div class="who">${logoImg(x.e.team)}<div style="min-width:0"><div class="name">${esc(x.e.name)}</div><div class="sub">${esc(x.e.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])}</div></div></div>
+    <div class="big num">${x.s}</div>
+    <div class="chev" aria-hidden="true">▸</div>
+    ${open ? scorecard(x.r, x.s, x.id, x.e.name, (ln.evo || {})[x.id], (ln.photos || {})[x.id], $("#lnList")) : ""}</div>`;
+  }).join("") : `<div class="empty">No box scores yet.</div>`;
+}
+
+function evoChart(pts, list){
+  // drawn at the list's real width so labels stay 12px on phones and the chart fills wide screens
+  const W = Math.max(280, (list.clientWidth || 600) - 56), H = W < 500 ? 200 : 250, L = 30, R = 12, T = 10, B = 24;
+  const end = pts[pts.length - 1][0], max = Math.max(10, ...pts.map(p => p[1])), min = Math.min(0, ...pts.map(p => p[1]));
+  const step = (max - min) > 60 ? 20 : 10, top = Math.ceil(max / step) * step, bot = Math.floor(min / step) * step;
+  const x = s => L + s / end * (W - L - R), y = v => T + (top - v) / (top - bot) * (H - T - B);
+  let g = "";
+  for (let v = bot; v <= top; v += step) g += `<line class="g" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  const qs = [[0, "0"], [720, "Q1"], [1440, "HT"], [2160, "Q3"], [2880, "Q4"]];
+  for (let k = 2880; k + 300 <= end; k += 300) qs.push([k + 300, "OT" + ((k - 2880) / 300 + 1)]);
+  for (let s = 180; s < end; s += 180) if (!qs.some(q => q[0] === s)) g += `<line class="g" x1="${x(s)}" x2="${x(s)}" y1="${T}" y2="${H - B}"/>`;
+  qs.forEach(([s, l], k) => g += `<line class="gq" x1="${x(s)}" x2="${x(s)}" y1="${T}" y2="${H - B}"/><text x="${x(s)}" y="${H - 6}" text-anchor="${k === 0 ? "start" : s === end ? "end" : "middle"}">${l}</text>`);
+  const line = pts.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ");
+  const area = `${x(0)},${y(0)} ${line} ${x(end)},${y(0)}`;
+  return `<svg class="evo" viewBox="0 0 ${W} ${H}" role="img" aria-label="TTFL score over the game, ending at ${pts[pts.length - 1][1]}">${g}<polygon class="ar" points="${area}"/><polyline class="ln" points="${line}"/></svg>`;
+}
+
+function scorecard(r, s, id, name, evo, photo, list){
+  const tile = (v, l) => `<div class="tile"><b class="num">${v}</b><span>${l}</span></div>`;
+  const miss = (r[10] - r[9]) + (r[12] - r[11]) + (r[14] - r[13]);
+  const plus = r[4] + r[5] + r[6] + r[7] + r[8] + r[9] + r[11] + r[13];
+  const evoOpen = !state.evoClosed.has(id);
+  return `<div class="scard">
+    ${photo ? `<div class="top"><img class="photo" src="${photo}" alt="${esc(name)}"><div><div class="pname">${esc(name)}</div><div class="big num">${s} <small>TTFL</small></div></div></div>` : ""}
+    ${evo ? `<button class="evo-h" type="button" data-evo="${esc(id)}" aria-expanded="${evoOpen}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/></svg><span class="t">Score evolution</span><svg class="chev2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>${evoOpen ? evoChart(evo, list) : ""}` : ""}
+    <div class="tiles">${tile(r[4], "Pts")}${tile(r[5], "Reb")}${tile(r[6], "Ast")}${tile(r[7], "Stl")}${tile(r[8], "Blk")}${tile(r[15], "TO")}${tile(`${r[9]}/${r[10]}`, "FG")}${tile(`${r[11]}/${r[12]}`, "3PT")}${tile(`${r[13]}/${r[14]}`, "FT")}${tile(Math.round(r[3]), "Min")}</div>
+    <div class="calc num"><span class="pos">+${plus} bonus</span><span class="neg">−${r[15]} turnovers</span><span class="neg">−${miss} missed shots</span><span><b>= ${s} TTFL</b></span></div>
+  </div>`;
+}
+
+// ---- live ----
+// The page reads ESPN's public scoreboard and box scores itself, so scores are as fresh as the last refresh.
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
+const PAGES_URL = "https://sallareznov.github.io/ttfl/";
+const live = {doc:null, game:null, open:new Set(), busy:false, msg:"", started:false, last:0, nba:null};
+const elapsedSecs = (period, clock) => {
+  const v = String(clock || "0"); let left = 0;
+  try { left = v.includes(":") ? +v.split(":")[0] * 60 + +v.split(":")[1] : +v; } catch (e) {}
+  const n = period || 1, [start, len] = n <= 4 ? [(n - 1) * 720, 720] : [2880 + (n - 5) * 300, 300];
+  return Math.round(start + len - (left || 0));
+};
+function playTtfl(p){ // same rules as build_data.py: TTFL points a play gives each player involved
+  const t = p.type?.text || "", txt = p.text || "", ids = (p.participants || []).map(x => x.athlete?.id).filter(Boolean);
+  if (!ids.length) return [];
+  if (p.shootingPlay) {
+    const ft = t.includes("Free Throw");
+    if (p.scoringPlay) { const v = p.scoreValue || 0; return [[ids[0], v + 1 + (v === 3)], ...(!ft && ids.length > 1 ? [[ids[1], 1]] : [])]; }
+    return [[ids[0], ft ? -1 : -(1 + (p.pointsAttempted === 3))], ...(!ft && ids.length > 1 && txt.includes("block") ? [[ids[1], 1]] : [])];
+  }
+  if (t.includes("Rebound")) return [[ids[0], 1]];
+  if (t.includes("Turnover") || txt.includes("turnover")) return [[ids[0], -1], ...(ids.length > 1 && txt.includes("steal") ? [[ids[1], 1]] : [])];
+  return [];
+}
+async function espn(path){
+  const r = await fetch(ESPN + path, {cache: "no-store", signal: AbortSignal.timeout(8000)});
+  if (!r.ok) throw new Error("ESPN " + r.status);
+  return r.json();
+}
+function boxPlayers(d, g){
+  const teams = d.boxscore?.players || [], plays = d.plays || [], tot = {}, evo = {};
+  for (const p of plays) for (const [id, v] of playTtfl(p)) { tot[id] = (tot[id] || 0) + v; (evo[id] ||= [[0, 0]]).push([elapsedSecs(p.period?.number, p.clock?.displayValue), tot[id]]); }
+  const end = g.state === "in" ? g.elapsed : Math.max(2880, ...plays.map(p => elapsedSecs(p.period?.number, p.clock?.displayValue)));
+  const out = [];
+  teams.forEach((t, i) => {
+    const me = t.team.abbreviation, opp = teams[1 - i]?.team.abbreviation, home = me === g.home ? 1 : 0;
+    for (const st of t.statistics || []) {
+      const idx = Object.fromEntries((st.names || []).map((n, k) => [n, k]));
+      for (const a of st.athletes || []) {
+        const s = a.stats || []; if (a.didNotPlay || !s.length) continue;
+        const num = k => +s[idx[k]] || 0, pair = k => { const [m, x] = String(s[idx[k]] || "0-0").split("-"); return [+m || 0, +x || 0]; };
+        const [fgm, fga] = pair("FG"), [tpm, tpa] = pair("3PT"), [ftm, fta] = pair("FT");
+        const r = [opp, home, num("MIN"), num("PTS"), num("REB"), num("AST"), num("STL"), num("BLK"), fgm, fga, tpm, tpa, ftm, fta, num("TO")];
+        if (r[2] <= 0) continue;
+        const score = ttfl(["", ...r]), id = a.athlete.id;
+        const curve = (evo[id] || [[0, 0]]).filter(q => q[0] <= end).concat([[end, score]]);
+        out.push([id, a.athlete.displayName, me, a.starter ? 1 : 0, r, curve]);
+      }
+    }
+  });
+  return out;
+}
+async function fetchLiveDirect(){
+  const sb = await espn("/scoreboard");
+  const games = (sb.events || []).slice().sort((a, b) => a.date < b.date ? -1 : 1).map(ev => {
+    const c = ev.competitions[0], st = c.status.type, h = c.competitors.find(x => x.homeAway === "home"), a = c.competitors.find(x => x.homeAway === "away");
+    return {id: ev.id, start: ev.date, state: st.state, detail: st.shortDetail, home: h.team.abbreviation, away: a.team.abbreviation,
+      homeScore: st.state !== "pre" ? h.score : null, awayScore: st.state !== "pre" ? a.score : null, players: [],
+      elapsed: elapsedSecs(c.status.period, c.status.displayClock)};
+  });
+  await Promise.all(games.filter(g => g.state !== "pre").map(async g => { g.players = boxPlayers(await espn("/summary?event=" + g.id), g); }));
+  return {updated: new Date().toISOString(), date: (sb.day?.date || "").replace(/-/g, ""), games};
+}
+const liveOn = () => !!live.doc && live.doc.games.some(g => g.state === "in" || (g.state === "pre" && new Date(g.start) <= new Date()));
+function renderLiveStatus(){
+  const d = live.doc, parts = [];
+  if (live.busy) parts.push("Fetching box scores…");
+  if (live.msg) parts.push(esc(live.msg) + (live.blocked ? ` <a href="${PAGES_URL}#live">Open it here</a>.` : ""));
+  if (d) parts.push(`${liveOn() ? `<span class="dot" aria-hidden="true"></span>` : ""}Updated <b>${esc(new Intl.DateTimeFormat(undefined, {timeZone: TZ, hour:"2-digit", minute:"2-digit", second:"2-digit", hourCycle:"h23"}).format(new Date(d.updated)))}</b>`);
+  if (live.nba !== null) parts.push(`<span class="small">Source ESPN · NBA.com feed ${live.nba ? "reachable" : "blocked"}</span>`);
+  $("#lvStatus").className = "st" + (live.msg ? " err" : "");
+  $("#lvStatus").innerHTML = parts.join(" · ");
+  $("#lvRefresh").disabled = live.busy;
+}
+async function refreshLive(){
+  if (live.busy) return;
+  live.busy = true; live.last = Date.now(); renderLiveStatus();
+  try { live.doc = await fetchLiveDirect(); live.msg = ""; }
+  catch (e) { // claude.ai's sandbox blocks outside sites, so point to the GitHub Pages copy there
+    live.blocked = !location.hostname.endsWith("github.io") && !live.doc;
+    live.msg = live.blocked ? "Live scores can't load in this copy of the page." : "Couldn't reach ESPN just now. Scores will retry on the next refresh.";
+  }
+  live.busy = false;
+  if (!$("#view-live").hidden) renderLive(); else renderLiveStatus();
+}
+function startLive(){
+  if (live.started) return; live.started = true;
+  refreshLive();
+  // one-off check of whether this browser may read NBA.com's own live feed (it usually only allows nba.com)
+  fetch("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json", {cache: "no-store", signal: AbortSignal.timeout(8000)})
+    .then(r => r.json()).then(() => true, () => false).then(ok => { live.nba = ok; renderLiveStatus(); });
+  setInterval(() => {
+    const every = liveOn() ? 30000 : 5 * 60000;
+    if ($("#lvAuto").checked && !$("#view-live").hidden && document.visibilityState === "visible" && Date.now() - live.last >= every) refreshLive();
+  }, 5000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && $("#lvAuto").checked && !$("#view-live").hidden && Date.now() - live.last > 20000) refreshLive(); });
+}
+function renderLive(){
+  startLive();
+  const d = live.doc;
+  renderLiveStatus();
+  if (!d) { $("#lvScores").innerHTML = ""; $("#lvList").innerHTML = `<div class="empty">${live.busy ? "Loading live scores…" : "No live scores yet."}</div>`; return; }
+  const day = d.date ? `${d.date.slice(0, 4)}-${d.date.slice(4, 6)}-${d.date.slice(6)}` : null;
+  $("#lvTitle").textContent = "Live TTFL scores" + (day ? ", " + fmtLong(day) : "");
+  if (live.game && !d.games.some(g => g.id === live.game)) live.game = null;
+  $("#lvScores").innerHTML = d.games.map(g => {
+    const scored = g.state !== "pre" && g.homeScore != null, hw = +g.homeScore > +g.awayScore, done = g.state === "post";
+    const st = g.state === "in" ? `<span class="gst on">Live · ${esc(g.detail || "")}</span>` : done ? `<span class="gst">Final</span>` : `<span class="gst">${esc(parisClock(new Date(g.start)))}</span>`;
+    return `<button type="button" class="score" data-g="${esc(g.id)}" aria-pressed="${live.game === g.id}"><div class="line ${done && hw ? "loss" : "win"}">${logoImg(g.away)}${esc(g.away)}${scored ? `<span class="pts">${esc(g.awayScore)}</span>` : ""}</div><div class="line ${done && !hw ? "loss" : "win"}">${logoImg(g.home)}${esc(g.home)}${scored ? `<span class="pts">${esc(g.homeScore)}</span>` : ""}</div>${st}</button>`;
+  }).join("") || `<div class="empty">No NBA games today.</div>`;
+  const q = norm($("#lvq").value || "");
+  const rows = d.games.filter(g => !live.game || g.id === live.game).flatMap(g => g.players.map(p => {
+    const r = [day, ...p[4]];
+    return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
+  })).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q)).sort((a, b) => b.s - a.s);
+  const started = d.games.some(g => g.state !== "pre");
+  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + rows.map((x, k) => {
+    const open = live.open.has(x.id);
+    return `<div class="lrow lnrow" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
+    <div class="rank num">${k + 1}</div>
+    <div class="who">${logoImg(x.team)}<div style="min-width:0"><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])} · ${Math.round(x.r[3])} min${x.g.state === "in" ? ` · <span class="lvtag">Live</span>` : ""}</div></div></div>
+    <div class="big num">${x.s}</div>
+    <div class="chev" aria-hidden="true">▸</div>
+    ${open ? scorecard(x.r, x.s, x.id, x.name, x.evo, null, $("#lvList")) : ""}</div>`;
+  }).join("") : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
+}
+
+// ---- schedule ----
+function schedGame(g){
+  const done = g.state === "post", live = g.state === "in", scored = (done || live) && g.homeScore != null;
+  const hw = scored && +g.homeScore > +g.awayScore, aw = scored && +g.awayScore > +g.homeScore;
+  const side = (t, rec, sc, lost) => `<div class="line ${done && lost ? "loss" : ""}">${logoImg(t)}${esc(t)}${rec ? `<span class="rec">${esc(rec)}</span>` : ""}${scored ? `<span class="pts">${esc(sc)}</span>` : ""}</div>`;
+  const when = done ? `<b>Final</b>${g.detail && g.detail !== "Final" ? " " + esc(g.detail.replace(/^Final\/?/, "")) : ""}` : live ? `<span class="live">Live · ${esc(g.detail || "")}</span>` : `<b>${esc(parisClock(new Date(g.time)))}</b>`;
+  const open = done && (DATA.gamePages || {})[g.id], tag = open ? "a" : "div";
+  return `<${tag} class="sgame ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
+    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
+}
+function renderSchedule(){
+  const team = $("#sTeam").value, days = DATA.schedule || [];
+  let total = 0;
+  const html = days.map(d => {
+    const gs = d.games.filter(g => !team || g.home === team || g.away === team).sort((a, b) => a.time < b.time ? -1 : 1);
+    total += gs.length;
+    if (!gs.length) return team ? "" : `<section class="sday"><h2>${fmtLong(d.date)} <span class="small muted">No games</span></h2></section>`;
+    const tonight = d.date === DATA.date;
+    return `<section class="sday"><h2>${fmtLong(d.date)}${tonight ? ` <span class="tag">Next TTFL night</span>` : ""} <span class="small muted">${team ? "" : `${gs.length} game${gs.length === 1 ? "" : "s"}`}</span></h2>
+      <div class="sched">${gs.map(schedGame).join("")}</div></section>`;
+  }).join("");
+  $("#schedList").innerHTML = html || `<div class="empty">No games scheduled in the next two weeks.</div>`;
+  $("#sNote").textContent = days.length ? `${team ? `${total} ${team} game${total === 1 ? "" : "s"}` : `${total} games`} from ${fmtDay(days[0].date)} to ${fmtDay(days[days.length - 1].date)} · US night, Paris tip-off times` : "";
+}
+
+// ---- rosters ----
+function renderRosters(){
+  const R = DATA.rosters || {}, names = DATA.teamNames || {}, nt = nextTeams(), q = norm($("#rq").value || "");
+  const abbrs = Object.keys(R).sort();
+  if (!state.team || !R[state.team]) state.team = (DATA.games[0] && DATA.games[0].away) || abbrs[0];
+  $("#tpick").innerHTML = abbrs.map(t => `<button type="button" data-team="${esc(t)}" class="${nt.has(t) ? "plays" : ""}" aria-pressed="${!q && state.team === t}" title="${esc(names[t] || t)}">${logoImg(t)}${esc(t)}</button>`).join("");
+  const injById = Object.fromEntries((DATA.injuryList || []).filter(i => i.id).map(i => [i.id, i]));
+  const head = `<div class="rrow head"><div>#</div><div>Player</div><div>Age</div><div>Height</div><div>Exp</div><div>Status</div><div>TTFL avg</div></div>`;
+  const prow = p => {
+    const inj = injById[p.id], info = inj ? injuryInfo(inj) : null;
+    const exp = p.exp == null ? "" : p.exp === 0 ? "Rookie" : p.exp + " yr";
+    return `<div class="rrow" data-pid="${esc(p.id)}"><div class="jersey num">${esc(p.jersey ?? "")}</div>
+      <div class="who2" style="min-width:0"><div class="name"><a class="plink" href="#player-${esc(p.id)}">${esc(p.name)}</a></div><div class="sub">${esc(p.pos || "")}${p.college ? " · " + esc(p.college) : ""}</div></div>
+      <div class="c-age num">${p.age ?? ""}</div><div class="c-ht num">${esc(p.ht || "")}</div><div class="c-exp">${exp}</div>
+      <div class="bio">${[p.age && p.age + " yrs", p.ht, exp].filter(Boolean).map(esc).join(" · ")}</div>
+      <div class="st">${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
+      <div class="tt num">${p.avg != null ? `<b>${f1(p.avg)}</b><span>${p.gp} g</span>` : `<b class="muted">–</b>`}${p.prevAvg != null ? `<div class="small muted">${f1(p.prevAvg)} in ${esc(DATA.prevSeason)}</div>` : ""}</div></div>`;
+  };
+  const posOrder = {PG:0, G:1, SG:2, GF:3, SF:4, F:5, PF:6, FC:7, C:8};
+  const thead = t => {
+    const g = gameFor(t);
+    return `<div class="teamhead">${logoImg(t)}<span>${esc(names[t] || t)}</span><span class="sub">${R[t].coach ? "Coach " + esc(R[t].coach) : ""}${g ? ` · next: ${g.home === t ? "vs " + esc(g.away) : "@ " + esc(g.home)} ${esc(parisClock(new Date(g.time)))}` : ""}</span></div>`;
+  };
+  let html;
+  if (q) {
+    html = abbrs.map(t => { const ps = R[t].players.filter(p => norm(p.name).includes(q) || norm(t) === q); return ps.length ? thead(t) + ps.map(prow).join("") : ""; }).join("");
+    html = html ? head + html : `<div class="empty">No player matches.</div>`;
+  } else {
+    const ps = R[state.team].players.slice().sort((a, b) => (posOrder[a.pos] ?? 9) - (posOrder[b.pos] ?? 9) || a.name.localeCompare(b.name));
+    html = thead(state.team) + head + (ps.map(prow).join("") || `<div class="empty">No roster listed.</div>`);
+  }
+  $("#rosterList").innerHTML = html;
+}
+
+// ---- player page ----
+let _rby = null;
+function ROSTER_BY_ID(){
+  if (!_rby) { _rby = {}; for (const [t, r] of Object.entries(DATA.rosters || {})) for (const p of r.players) _rby[p.id] = {p, team: t}; }
+  return _rby;
+}
+const _shotCache = {};
+function playerShots(id){ // -> [{x, y, made, three, g, d}] with x 0-50 across, y feet from the basket
+  if (_shotCache[id]) return _shotCache[id];
+  const out = [];
+  for (const seg of (DATA.shots || {})[id] ? DATA.shots[id].split(",") : []) {
+    const [gi, str] = seg.split(":"), g = parseInt(gi, 36);
+    for (let i = 0; i + 3 <= str.length; i += 3) {
+      const v = parseInt(str.slice(i, i + 3), 36), r = v >> 2, x = Math.floor(r / 100), y = r % 100 - 5;
+      out.push({x, y, made: (v >> 1) & 1, three: v & 1, g, d: Math.hypot(x - 25, y)});
+    }
+  }
+  return _shotCache[id] = out;
+}
+const ZONES = ["Restricted area", "In the paint (non-RA)", "Mid-range", "Corner 3", "Above the break 3"];
+function zoneOf(s){
+  if (s.three) return Math.abs(s.x - 25) >= 21 && s.y <= 9 ? "Corner 3" : "Above the break 3";
+  if (s.d <= 4) return "Restricted area";
+  return Math.abs(s.x - 25) <= 8 && s.y <= 14 ? "In the paint (non-RA)" : "Mid-range";
+}
+let _league = null;
+function leagueZones(){
+  if (_league) return _league;
+  _league = {};
+  for (const id in DATA.shots || {}) for (const s of playerShots(id)) { const z = (_league[zoneOf(s)] ||= [0, 0]); z[0] += s.made; z[1]++; }
+  return _league;
+}
+const pctTxt = (m, a) => a ? (100 * m / a).toFixed(1) + "%" : "–";
+const lineTtfl = l => l[1] + l[2] + l[3] + l[4] + l[5] + l[6] + l[8] + l[10] - l[12] - (l[7] - l[6]) - (l[9] - l[8]) - (l[11] - l[10]);
+const gameLabel = (g, team) => { const G = DATA.shotGames[g]; if (!G) return ""; const home = G[1] === team; return `${fmtDay(G[0])} ${home ? "vs" : "@"} ${home ? G[2] : G[1]}`; };
+
+function courtSvg(shots, sel){
+  // half court, basket at the top: 50 ft wide, 47 ft deep, rim 5.25 ft from the baseline; 10 px per foot
+  const S = 10, Y = y => (Math.min(y, 46) + 5.25) * S, X = x => x * S;
+  const arcY = 5.25 + Math.sqrt(23.75 ** 2 - 22 ** 2);
+  let g = `<rect class="ln" x="0" y="0" width="500" height="470"/>
+    <rect class="ln" x="170" y="0" width="160" height="190"/><rect class="ln" x="190" y="0" width="120" height="190"/>
+    <path class="ln" d="M190 190 A60 60 0 0 0 310 190"/><path class="ln" d="M190 190 A60 60 0 0 1 310 190" stroke-dasharray="6 6"/>
+    <line class="ln" x1="220" x2="280" y1="40" y2="40"/><circle class="ln" cx="250" cy="52.5" r="7.5"/>
+    <path class="ln" d="M210 52.5 A40 40 0 0 0 290 52.5"/>
+    <path class="ln" d="M30 0 V${arcY * S} A237.5 237.5 0 0 0 470 ${arcY * S} V0"/>
+    <path class="ln" d="M190 470 A60 60 0 0 1 310 470"/><path class="ln" d="M230 470 A20 20 0 0 1 270 470"/>`;
+  shots.forEach((s, i) => {
+    const cx = X(s.x), cy = Y(s.y), cls = (sel.zone && zoneOf(s) !== sel.zone ? " dim" : "") + (sel.shot === i ? " on" : "");
+    g += `<g class="mk${cls}" data-shot="${i}"><circle class="hit" cx="${cx}" cy="${cy}" r="11"/>${s.made ? `<circle class="made" cx="${cx}" cy="${cy}" r="7"/>` : `<path class="miss" d="M${cx - 6} ${cy - 6}L${cx + 6} ${cy + 6}M${cx + 6} ${cy - 6}L${cx - 6} ${cy + 6}"/>`}</g>`;
+  });
+  return `<svg class="court" viewBox="-6 -6 512 482" role="img" aria-label="Shot chart: ${shots.filter(s => s.made).length} made of ${shots.length} shots">${g}</svg>`;
+}
+
+// ---- player page: VS team, VS player, splits ----
+const played = log => log.filter(r => r[3] > 0);
+const curFrom = () => (parseInt(DATA.season) || 0) + "-08-01";
+const shortDate = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(undefined, {day:"numeric", month:"short", year:"2-digit"});
+function aggRow(lab, rows, ref, cls = ""){ // one averages row; TTFL coloured against ref
+  rows = played(rows); if (!rows.length) return "";
+  const n = rows.length, av = k => rows.reduce((a, r) => a + r[k], 0) / n, sum = k => rows.reduce((a, r) => a + r[k], 0), t = mean(rows, ttfl);
+  return `<tr class="${cls}"><td class="l">${lab}</td><td class="tt ${ref == null || n < 2 ? "" : t >= ref + .5 ? "up" : t <= ref - .5 ? "down" : ""}">${f1(t)}</td><td>${n}</td><td>${f1(av(3))}</td><td>${f1(av(4))}</td><td>${f1(av(5))}</td><td>${f1(av(6))}</td><td>${f1(av(7))}</td><td>${f1(av(8))}</td><td>${f1(av(15))}</td><td>${pctTxt(sum(9), sum(10))}</td><td>${pctTxt(sum(11), sum(12))}</td><td>${pctTxt(sum(13), sum(14))}</td></tr>`;
+}
+const AGG_HEAD = `<tr><th class="l"></th><th>TTFL</th><th>GP</th><th>Min</th><th>Pts</th><th>Reb</th><th>Ast</th><th>Stl</th><th>Blk</th><th>TO</th><th>FG%</th><th>3P%</th><th>FT%</th></tr>`;
+const LOG_HEAD = `<tr><th class="l">Date</th><th class="l">Opp</th><th>TTFL</th><th>Min</th><th>Pts</th><th>Reb</th><th>Ast</th><th>Stl</th><th>Blk</th><th>FG</th><th>3PT</th><th>FT</th><th>TO</th></tr>`;
+const logCells = r => `<td class="l">${shortDate(r[0])}${r[16] ? ` <span class="muted">PO</span>` : ""}</td><td class="l">${r[2] ? "vs" : "@"} ${esc(r[1])}</td><td class="tt">${ttfl(r)}</td><td>${Math.round(r[3])}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}-${r[10]}</td><td>${r[11]}-${r[12]}</td><td>${r[13]}-${r[14]}</td><td>${r[15]}</td>`;
+const seasonNote = () => `${DATA.prevSeason} and ${DATA.season}, regular season and playoffs (PO).`;
+
+function vsTeamPanel(p, team, ps){
+  const log = p.log || [], names = DATA.teamNames || {}, g = gameFor(team);
+  const opps = Object.keys(DATA.rosters || names).filter(t => t !== team).sort();
+  if (!ps.vsTeam || !opps.includes(ps.vsTeam)) ps.vsTeam = g ? (g.home === team ? g.away : g.home) : (log[0] && opps.includes(log[0][1]) ? log[0][1] : opps[0]);
+  const rows = log.filter(r => r[1] === ps.vsTeam), ref = mean(played(log), ttfl);
+  const sel = `<select id="psTeam" aria-label="Opponent">${opps.map(t => `<option value="${esc(t)}" ${t === ps.vsTeam ? "selected" : ""}>${esc(names[t] || t)}${g && (g.home === t || g.away === t) ? " (next game)" : ""}</option>`).join("")}</select>`;
+  const body = played(rows).length
+    ? `<div class="gl"><table class="stats">${AGG_HEAD}${aggRow("vs " + esc(ps.vsTeam), rows, ref)}${aggRow("All games", log, null)}</table></div>
+       <div class="gl" style="margin-top:12px"><table class="stats">${LOG_HEAD}${rows.map(r => `<tr>${logCells(r)}</tr>`).join("")}</table></div>`
+    : `<p class="small muted">No games against ${esc(names[ps.vsTeam] || ps.vsTeam)} since the start of ${DATA.prevSeason}.</p>`;
+  return `<section class="card"><div class="vsbar"><h3>VS team</h3>${sel}</div>${body}<p class="small muted">${seasonNote()} TTFL is green or red when he does better or worse than in all his games.</p></section>`;
+}
+
+function matchups(p, team){ // other rostered players he has faced: {id, name, team, games: [[mine, theirs]]}
+  const mine = new Map(played(p.log || []).map(r => [r[0], r])), out = [];
+  for (const [t, R] of Object.entries(DATA.rosters || {})) {
+    if (t === team) continue;
+    for (const o of R.players) {
+      const games = [];
+      for (const r of played(o.log || [])) { const m = mine.get(r[0]); if (m && m[2] !== r[2] && (m[1] === t || r[1] === team)) games.push([m, r]); }
+      if (games.length) out.push({id: o.id, name: o.name, team: t, avg: o.avg, games});
+    }
+  }
+  return out;
+}
+function vsPlayerPanel(p, team, ps){
+  const list = matchups(p, team), names = DATA.teamNames || {}, g = gameFor(team);
+  if (!list.length) return `<section class="card"><h3>VS player</h3><p class="small muted">No games against current NBA players since the start of ${DATA.prevSeason}.</p></section>`;
+  if (!list.some(o => o.id === ps.vsPlayer)) {
+    const next = g ? (g.home === team ? g.away : g.home) : null, pool = list.filter(o => o.team === next);
+    ps.vsPlayer = (pool.length ? pool.sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1))[0] : list.slice().sort((a, b) => b.games.length - a.games.length)[0]).id;
+  }
+  const o = list.find(x => x.id === ps.vsPlayer), byTeam = {};
+  for (const x of list) (byTeam[x.team] ||= []).push(x);
+  const sel = `<select id="psVsP" aria-label="Opposing player">${Object.keys(byTeam).sort().map(t => `<optgroup label="${esc(names[t] || t)}">${byTeam[t].sort((a, b) => a.name.localeCompare(b.name)).map(x => `<option value="${esc(x.id)}" ${x.id === o.id ? "selected" : ""}>${esc(x.name)} (${x.games.length})</option>`).join("")}</optgroup>`).join("")}</select>`;
+  const gs = o.games, me = gs.map(x => x[0]), them = gs.map(x => x[1]), ref = mean(played(p.log || []), ttfl);
+  const wins = gs.filter(([a, b]) => ttfl(a) > ttfl(b)).length, losses = gs.filter(([a, b]) => ttfl(a) < ttfl(b)).length;
+  const tile = (v, l) => `<div class="ptile"><b class="num">${v}</b><span>${l}</span></div>`;
+  const n1 = esc(shortName(p.name)), n2 = esc(shortName(o.name));
+  return `<section class="card"><div class="vsbar"><h3>VS player</h3>${sel}</div>
+    <div class="h2h"><div><b class="num">${f1(mean(me, ttfl))}</b><span>${n1}</span></div><div class="mid"><b class="num">${wins}-${losses}</b><span>${gs.length} game${gs.length === 1 ? "" : "s"}</span></div><div><b class="num">${f1(mean(them, ttfl))}</b><span>${n2}</span></div></div>
+    <div class="gl" style="margin-top:12px"><table class="stats"><tr><th class="l">Date</th><th class="l">Game</th><th>${n1}</th><th>${n2}</th><th class="sep">${n1} P/R/A</th><th>${n2} P/R/A</th><th class="sep">${n1} min</th><th>${n2} min</th></tr>
+      ${gs.map(([a, b]) => `<tr><td class="l">${shortDate(a[0])}${a[16] ? ` <span class="muted">PO</span>` : ""}</td><td class="l">${a[2] ? "vs" : "@"} ${esc(a[1])}</td><td class="tt ${ttfl(a) > ttfl(b) ? "up" : ttfl(a) < ttfl(b) ? "down" : ""}">${ttfl(a)}</td><td class="tt">${ttfl(b)}</td><td class="sep">${a[4]}/${a[5]}/${a[6]}</td><td>${b[4]}/${b[5]}/${b[6]}</td><td class="sep">${Math.round(a[3])}</td><td>${Math.round(b[3])}</td></tr>`).join("")}</table></div>
+    <p class="small muted">Games where both played against each other, ${seasonNote()} The number after each name in the list is how many.</p></section>`;
+}
+
+function splitsPanel(p, ps){
+  const cf = curFrom(), all = played(p.log || []).slice().sort((a, b) => a[0] < b[0] ? -1 : 1);
+  const rest = new Map(); all.forEach((r, i) => { if (i) rest.set(r, Math.round((Date.parse(r[0]) - Date.parse(all[i - 1][0])) / 864e5) - 1); });
+  const rows = (ps.scope === "cur" ? all.filter(r => r[0] >= cf) : all).reverse();
+  const scope = `<div class="seg" role="group" aria-label="Games">${[["all", "Both seasons"], ["cur", `${DATA.season} only`]].map(([k, l]) => `<button type="button" data-scope="${k}" aria-pressed="${ps.scope === k}">${l}</button>`).join("")}</div>`;
+  if (!rows.length) return `<section class="card"><div class="vsbar"><h3>Splits</h3>${scope}</div><p class="small muted">No games played${ps.scope === "cur" ? ` in ${DATA.season} yet` : ""}.</p></section>`;
+  const ref = mean(rows, ttfl), grp = l => `<tr class="grp"><td class="l" colspan="13">${l}</td></tr>`;
+  const months = [...new Set(rows.map(r => r[0].slice(0, 7)))].sort().reverse();
+  const seasons = ps.scope === "cur" ? aggRow(DATA.season, rows, ref)
+    : aggRow(DATA.season, rows.filter(r => r[0] >= cf && !r[16]), ref) + aggRow(DATA.prevSeason, rows.filter(r => r[0] < cf && !r[16]), ref) + aggRow(`${DATA.prevSeason} playoffs`, rows.filter(r => r[16]), ref);
+  const groups = {
+    season: ["Season", () => seasons],
+    recent: ["Recent", () => [5, 10, 20].map(n => rows.length > n ? aggRow(`Last ${n}`, rows.slice(0, n), ref) : "").join("")],
+    loc: ["Home/away", () => aggRow("Home", rows.filter(r => r[2]), ref) + aggRow("Away", rows.filter(r => !r[2]), ref)],
+    rest: ["Rest", () => aggRow("Back-to-back", rows.filter(r => rest.get(r) === 0), ref) + aggRow("1 day of rest", rows.filter(r => rest.get(r) === 1), ref) + aggRow("2+ days of rest", rows.filter(r => rest.get(r) >= 2), ref)],
+    min: ["Minutes", () => aggRow("30+ min", rows.filter(r => r[3] >= 30), ref) + aggRow("20 to 30 min", rows.filter(r => r[3] >= 20 && r[3] < 30), ref) + aggRow("Under 20 min", rows.filter(r => r[3] < 20), ref)],
+    month: ["Month", () => months.map(m => aggRow(new Date(m + "-15T12:00:00Z").toLocaleDateString(undefined, {month:"short", year:"2-digit"}), rows.filter(r => r[0].startsWith(m)), ref)).join("")]};
+  if (!groups[ps.sgrp]) ps.sgrp = "season";
+  const gbtn = `<div class="seg ptabs tabs6" role="group" aria-label="Split by">${Object.entries(groups).map(([k, [l]]) => `<button type="button" data-sgrp="${k}" aria-pressed="${ps.sgrp === k}">${l}</button>`).join("")}</div>`;
+  const t = aggRow("All games", rows, null, "sel") + groups[ps.sgrp][1]();
+  return `<section class="card"><div class="vsbar"><h3>Splits</h3>${scope}</div>${gbtn}<div class="gl"><table class="stats">${AGG_HEAD}${t}</table></div>
+    <p class="small muted">Per-game averages. TTFL is green or red when he does better or worse than in all the games shown. Rest counts days since his previous game.</p></section>`;
+}
+
+function renderPlayer(){
+  const hit = ROSTER_BY_ID()[state.pid], el = $("#playerBody");
+  if (!hit) { el.innerHTML = `<div class="empty">Player not found. He may have left the roster since the last update.</div>`; return; }
+  const {p, team} = hit, names = DATA.teamNames || {}, ps = state.ps;
+  const inj = (DATA.injuryList || []).find(i => i.id === p.id), info = inj ? injuryInfo(inj) : null;
+  const exp = p.exp == null ? "" : p.exp === 0 ? "Rookie" : p.exp + " yrs in the NBA";
+  const log = (p.log || []).slice(0, 20), l5 = log.filter(r => r[3] > 0).slice(0, 5);
+  const tile = (v, l) => `<div class="ptile"><b class="num">${v}</b><span>${l}</span></div>`;
+  // season lines
+  const lineRow = (lab, l) => l ? `<tr><td class="l">${esc(lab)}</td><td class="tt">${f1(lineTtfl(l))}</td><td>${l[13]}</td><td>${f1(l[0])}</td><td>${f1(l[1])}</td><td>${f1(l[2])}</td><td>${f1(l[3])}</td><td>${f1(l[4])}</td><td>${f1(l[5])}</td><td>${f1(l[12])}</td><td>${pctTxt(l[6], l[7])}</td><td>${pctTxt(l[8], l[9])}</td><td>${pctTxt(l[10], l[11])}</td></tr>` : "";
+  const lines = lineRow(DATA.season, p.line) + lineRow(DATA.prevSeason, p.prevLine);
+  // shots
+  const all = playerShots(p.id);
+  const games = [...new Set(all.map(s => s.g))].sort((a, b) => b - a);
+  if (ps.game != null && !games.includes(ps.game)) ps.game = null;
+  const shots = all.filter(s => (ps.game == null || s.g === ps.game) && (ps.type === "all" || (ps.type === "3" ? s.three : !s.three)));
+  const inZone = ps.zone ? shots.filter(s => zoneOf(s) === ps.zone) : shots;
+  const made = inZone.filter(s => s.made).length, att = inZone.length;
+  const dist = att ? Math.round(inZone.reduce((a, s) => a + s.d, 0) / att) + "'" : "–";
+  const lg = leagueZones();
+  const zrows = ZONES.map(z => {
+    const zs = shots.filter(s => zoneOf(s) === z); if (!zs.length) return "";
+    const m = zs.filter(s => s.made).length, L = lg[z] || [0, 0], pv = m / zs.length, lv = L[1] ? L[0] / L[1] : null;
+    return `<tr data-zone="${esc(z)}" class="${ps.zone === z ? "sel" : ""}"><td class="l">${esc(z)}</td><td>${m}/${zs.length}</td><td class="${lv == null ? "" : pv >= lv ? "up" : "down"}">${pctTxt(m, zs.length)}</td><td>${pctTxt(L[0], L[1])}</td></tr>`;
+  }).join("");
+  const s = ps.shot != null ? shots[ps.shot] : null;
+  const info2 = s ? `<b>${s.made ? "Made" : "Missed"} ${s.three ? "3PT" : "2PT"}</b> · ${Math.round(s.d)} ft · ${esc(zoneOf(s))} · ${esc(gameLabel(s.g, team))}` : `<span class="muted">Tap a shot for details, or a zone to highlight it.</span>`;
+  const shotCard = all.length ? `<section class="card" id="shotCard">
+      <div class="bar"><h3>Shot chart</h3>
+        <select id="psGame" aria-label="Games"><option value="">Whole season</option>${games.map(g => `<option value="${g}" ${ps.game === g ? "selected" : ""}>${esc(gameLabel(g, team))}</option>`).join("")}</select></div>
+      <div class="seg" role="group" aria-label="Shot type">${[["all", "All"], ["2", "2PT"], ["3", "3PT"]].map(([k, l]) => `<button type="button" data-type="${k}" aria-pressed="${ps.type === k}">${l}</button>`).join("")}<span class="phone sepx"></span>${[["court", "Court"], ["zones", "Zones"]].map(([k, l]) => `<button type="button" class="phone" data-sv="${k}" aria-pressed="${(ps.sv || "court") === k}">${l}</button>`).join("")}</div>
+      <div class="stiles"><div class="stile"><span>Made</span><b class="num">${made}</b></div><div class="stile"><span>Att.</span><b class="num">${att}</b></div><div class="stile"><span>FG%</span><b class="num">${pctTxt(made, att)}</b></div><div class="stile alt"><span>Dist.</span><b class="num">${dist}</b></div></div>
+      <div class="shotwrap" data-v="${ps.sv || "court"}"><div class="courtpane" style="display:grid;gap:8px">${courtSvg(shots, ps)}<div class="shotinfo">${info2}</div></div>
+        <div class="zonepane" style="display:grid;gap:14px">
+          ${ps.zone ? `<div class="small">Showing <b>${esc(ps.zone)}</b> only · <a href="#" data-clearzone>show all zones</a></div>` : ""}
+          <div class="gl"><table class="stats zones"><tr><th class="l">Zone</th><th>Player</th><th>%</th><th>League</th></tr>${zrows || `<tr><td class="l muted" colspan="4">No shots.</td></tr>`}</table></div>
+          <p class="small muted">${DATA.season} regular season, from ESPN play-by-play. League = every NBA shot this season.</p>
+        </div></div></section>`
+    : `<section class="card"><h3>Shot chart</h3><p class="muted small">No ${DATA.season} regular-season shots yet. The chart fills in after his first game.</p></section>`;
+  // game log
+  const shotDays = new Map(games.map(g => [DATA.shotGames[g][0], g]));
+  const cf = curFrom(), seasonLog = (p.log || []).filter(r => ps.logSeason === "cur" ? r[0] >= cf : r[0] < cf);
+  const logSel = `<select id="psLog" aria-label="Season">${[["cur", DATA.season], ["prev", DATA.prevSeason + " (with playoffs)"]].map(([k, l]) => `<option value="${k}" ${ps.logSeason === k ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+  const logN = ps.logN || 10;
+  const glog = seasonLog.slice(0, logN).map(r => {
+    const gid = gameIdFor(r[0], r[1]);
+    return `<tr class="${gid ? "go" : ""}" ${gid ? `data-gid="${gid}" title="Box score and play-by-play"` : ""}>${logCells(r)}</tr>`;
+  }).join("");
+  el.innerHTML = `<div class="phead">${logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
+      ${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
+    ${inj && inj.short ? `<div class="notice small">${esc(inj.short)}</div>` : ""}
+    <div class="ptiles four">${tile(p.avg != null ? f1(p.avg) : "–", `Avg ${DATA.season}${p.gp ? " · " + p.gp + " g" : ""}`)}${tile(l5.length ? f1(mean(l5, ttfl)) : "–", "Avg last 5")}${tile(p.prevAvg != null ? f1(p.prevAvg) : "–", `Avg ${DATA.prevSeason}${p.prevGp ? " · " + p.prevGp + " g" : ""}`)}${tile(log.length ? Math.max(...log.map(ttfl)) : "–", `Best, last ${log.length}`)}</div>
+    <div class="seg ptabs tabs6" role="group" aria-label="Player stats">${[["log", "Game log"], ["avg", "Averages"], ["splits", "Splits"], ["shots", "Shot chart"], ["vsplayer", "VS player"], ["vsteam", "VS team"]].map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${ps.tab === k}">${l}</button>`).join("")}</div>
+    ${ps.tab === "log" ? `<section class="card"><div class="bar"><h3>Game log</h3>${logSel}</div><div class="gl">${glog ? `<table class="stats">${LOG_HEAD}${glog}</table>` : `<p class="small muted">No ${ps.logSeason === "cur" ? DATA.season : DATA.prevSeason} games${ps.logSeason === "cur" ? " yet" : ""}.</p>`}</div>
+      ${seasonLog.length > logN ? `<button type="button" class="ghost" data-logmore>Show more games (${seasonLog.length - logN} left)</button>` : ""}
+      ${glog && ps.logSeason === "cur" && games.length ? `<p class="small muted">Tap a game for its box score and play-by-play.</p>` : ""}</section>` : ""}
+    ${ps.tab === "avg" ? `<section class="card"><h3>Season averages</h3><div class="gl">${lines ? `<table class="stats"><tr><th class="l">Season</th><th>TTFL</th><th>GP</th><th>Min</th><th>Pts</th><th>Reb</th><th>Ast</th><th>Stl</th><th>Blk</th><th>TO</th><th>FG%</th><th>3P%</th><th>FT%</th></tr>${lines}</table>` : `<p class="small muted">No NBA games in the last two seasons.</p>`}</div></section>` : ""}
+    ${ps.tab === "shots" ? shotCard : ps.tab === "vsteam" ? vsTeamPanel(p, team, ps) : ps.tab === "vsplayer" ? vsPlayerPanel(p, team, ps) : ps.tab === "splits" ? splitsPanel(p, ps) : ""}`;
+}
+
+// ---- game page ----
+let _gidx = null;
+function gameIdFor(date, opp){ // game log row (date, opponent) -> game page id
+  if (!_gidx) { _gidx = {}; for (const [id, G] of Object.entries(DATA.gamePages || {})) { _gidx[G.date + "|" + G.home] = id; _gidx[G.date + "|" + G.away] = id; } }
+  const next = new Date(Date.parse(date + "T12:00:00Z") - 864e5).toISOString().slice(0, 10); // log dates can run a day ahead (UTC)
+  return _gidx[date + "|" + opp] || _gidx[next + "|" + opp] || null;
+}
+const boxRow = p => [0, 0, 0].concat(p.slice(4, 17)); // game page player -> game log row shape, for ttfl()
+const shortName = n => n.split(" ").length > 1 ? n.split(" ").slice(1).join(" ") : n;
+function renderGame(){
+  const G = (DATA.gamePages || {})[state.gid], el = $("#gameBody"), gs = state.gs;
+  if (!G) { el.innerHTML = `<div class="empty">This game isn't available. Box scores cover ${DATA.season} games only.</div>`; return; }
+  const tn = DATA.teamNames || {}, sides = [G.away, G.home], sc = G.score.map(Number), win = sc[1] > sc[0] ? 1 : 0, R = ROSTER_BY_ID();
+  const team = i => `<div class="gteam ${i === win ? "" : "loss"}">${i ? `<span class="gscore">${G.score[i]}</span>` : ""}${logoImg(sides[i])}<span>${esc(sides[i])}</span>${i ? "" : `<span class="gscore">${G.score[i]}</span>`}</div>`;
+  const per = n => n <= 4 ? "Q" + n : "OT" + (n > 5 ? n - 4 : "");
+  if (gs.tab == null) { const me = gs.fromPid && G.p.find(x => x[1] === gs.fromPid); gs.tab = me ? String(me[0]) : String(win); }
+  const lines = `<div class="gl lines"><table class="stats"><tr><th class="l">Team</th>${G.lines[0].map((_, i) => `<th>${per(i + 1)}</th>`).join("")}<th>Final</th></tr>${[0, 1].map(i => `<tr><td class="l">${esc(sides[i])}</td>${G.lines[i].map(v => `<td>${esc(v)}</td>`).join("")}<td class="tt">${G.score[i]}</td></tr>`).join("")}</table></div>`;
+  const box = i => {
+    const pl = G.p.filter(p => p[0] === i), on = pl.filter(p => p.length > 5).sort((a, b) => ttfl(boxRow(b)) - ttfl(boxRow(a)) || b[4] - a[4]), off = pl.filter(p => p.length <= 5);
+    const nm = p => { const n = `<span class="lg">${esc(p[2])}</span><span class="sh">${esc(p[2].split(" ").length > 1 ? p[2][0] + ". " + shortName(p[2]) : p[2])}</span>`; return `${R[p[1]] ? `<a href="#player-${esc(p[1])}">${n}</a>` : n}${p[3] ? `<span class="st5" title="Starter">S</span>` : ""}`; };
+    const rows = on.map(p => { const r = boxRow(p); return `<tr><td class="pl">${nm(p)}</td><td class="tt">${ttfl(r)}</td><td>${Math.round(p[4])}</td><td>${p[5]}</td><td>${p[6]}</td><td>${p[7]}</td><td>${p[8]}</td><td>${p[9]}</td><td>${p[10]}-${p[11]}</td><td>${p[12]}-${p[13]}</td><td>${p[14]}-${p[15]}</td><td>${p[16]}</td><td>${p[19]}</td><td>${p[20] > 0 ? "+" : ""}${p[20]}</td></tr>`; }).join("")
+      + off.map(p => `<tr class="dnp"><td class="pl">${nm(p)}</td><td class="l" colspan="14">${esc(p[4].replace(/'S\b/g, "'s"))}</td></tr>`).join("");
+    const tot = on.reduce((a, p) => a + ttfl(boxRow(p)), 0);
+    return `<section class="card"><div class="bar"><h3>${logoImg(sides[i])} ${esc(tn[sides[i]] || sides[i])}</h3><span class="small muted">TTFL total <b>${tot}</b></span></div>
+      <div class="gl"><table class="stats"><tr><th class="l">Player</th><th>TTFL</th><th>Min</th><th>Pts</th><th>Reb</th><th>Ast</th><th>Stl</th><th>Blk</th><th>FG</th><th>3PT</th><th>FT</th><th>TO</th><th>PF</th><th>+/-</th></tr>${rows}</table></div></section>`;
+  };
+  const labels = DATA.teamStatLabels || [];
+  const tstats = `<section class="card"><h3>Team stats</h3><div class="gl"><table class="stats"><tr><th class="l"></th><th>${esc(G.away)}</th><th>${esc(G.home)}</th></tr>${labels.map((l, k) => `<tr><td class="l">${esc(l)}</td><td>${esc(G.teamStats[0][k] ?? "")}</td><td>${esc(G.teamStats[1][k] ?? "")}</td></tr>`).join("")}</table></div></section>`;
+  let pbp;
+  if (!G.pbp) pbp = `<section class="card"><h3>Play-by-play</h3><p class="small muted">Play-by-play is kept for the ${80} most recent games only, to keep the page light.</p></section>`;
+  else {
+    const periods = [...new Set(G.pbp.map(x => x[0]))];
+    if (gs.period !== "all" && !periods.includes(+gs.period)) gs.period = "all";
+    const plays = G.pbp.filter(x => (gs.period === "all" || x[0] === +gs.period) && (!gs.scoring || x[5]));
+    let last = null;
+    const rows = plays.map(x => {
+      const head = gs.period === "all" && x[0] !== last ? `<tr class="grp"><td class="l" colspan="3">${per(x[0])}</td></tr>` : ""; last = x[0];
+      const chips = x[7].map(([k, v]) => `<span class="chip ${v > 0 ? "pos" : "neg"}">${v > 0 ? "+" : "−"}${Math.abs(v)} ${esc(shortName(G.p[k][2]))}</span>`).join("");
+      return `${head}<tr class="${x[5] ? "sc" : ""}"><td class="l num ck">${esc(x[1])}<span>${x[2] >= 0 ? esc(sides[x[2]]) : ""}</span></td><td class="tx">${esc(x[6])}${chips}</td><td class="num">${x[3]}-${x[4]}</td></tr>`;
+    }).join("");
+    pbp = `<section class="card"><div class="bar"><h3>Play-by-play</h3><label class="chk"><input type="checkbox" id="gScoring" ${gs.scoring ? "checked" : ""}> Scoring plays only</label></div>
+      <div class="seg ptabs" role="group" aria-label="Period">${[["all", "All"], ...periods.map(n => [String(n), per(n)])].map(([k, l]) => `<button type="button" data-period="${k}" aria-pressed="${String(gs.period) === k}">${l}</button>`).join("")}</div>
+      <div class="gl"><table class="stats pbp"><tr><th class="l">Clock</th><th class="l">Play</th><th>${esc(G.away)}-${esc(G.home)}</th></tr>${rows || `<tr><td class="l muted" colspan="3">No plays.</td></tr>`}</table></div>
+      <p class="small muted">Chips show the TTFL points each play gave a player.</p></section>`;
+  }
+  el.innerHTML = `<div class="ghead">${team(0)}<span class="muted">@</span>${team(1)}<div class="gmeta">${new Date(G.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric", month:"short", year:"numeric"})} · Final</div></div>
+    <section class="card">${lines}</section>
+    <div class="seg ptabs tabs4" role="group" aria-label="Game">${[["0", sides[0] + " box"], ["1", sides[1] + " box"], ["stats", "Team stats"], ["pbp", "Plays"]].map(([k, l]) => `<button type="button" data-gtab="${k}" aria-pressed="${gs.tab === k}">${esc(l)}</button>`).join("")}</div>
+    ${gs.tab === "0" ? box(0) : gs.tab === "1" ? box(1) : gs.tab === "stats" ? tstats : pbp}`;
+}
+
+function onPlayerClick(e){
+  const ps = state.ps, t = e.target;
+  const tb = t.closest("[data-tab]"); if (tb) { ps.tab = tb.dataset.tab; return renderPlayer(); }
+  const sc = t.closest("[data-scope]"); if (sc) { ps.scope = sc.dataset.scope; return renderPlayer(); }
+  const sv = t.closest("[data-sv]"); if (sv) { ps.sv = sv.dataset.sv; return renderPlayer(); }
+  const lm = t.closest("[data-logmore]"); if (lm) { ps.logN = (ps.logN || 10) + 20; return renderPlayer(); }
+  const sg = t.closest("[data-sgrp]"); if (sg) { ps.sgrp = sg.dataset.sgrp; return renderPlayer(); }
+  const sh = t.closest("[data-shot]"); if (sh) { ps.shot = ps.shot === +sh.dataset.shot ? null : +sh.dataset.shot; return renderPlayer(); }
+  const ty = t.closest("[data-type]"); if (ty) { ps.type = ty.dataset.type; ps.shot = null; ps.zone = null; return renderPlayer(); }
+  const z = t.closest("[data-zone]"); if (z) { ps.zone = ps.zone === z.dataset.zone ? null : z.dataset.zone; ps.shot = null; return renderPlayer(); }
+  if (t.closest("[data-clearzone]")) { e.preventDefault(); ps.zone = null; return renderPlayer(); }
+  const gl = t.closest("tr[data-gid]"); if (gl) { location.hash = "game-" + gl.dataset.gid; return; }
+  const g = t.closest("tr[data-g]"); if (g) { ps.game = ps.tab === "shots" && ps.game === +g.dataset.g ? null : +g.dataset.g; ps.tab = "shots"; ps.shot = null; ps.zone = null; renderPlayer(); }
+}
+
+const VIEWS = {picks: null, live: renderLive, injuries: renderInjuries, form: renderForm, lastnight: renderLastNight, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
+let lastView = "rosters", prevHash = "";
+function showView(){
+  let v = (location.hash || "").slice(1);
+  if (v.startsWith("player-")) {
+    const pid = v.slice(7);
+    if (state.pid !== pid) { state.pid = pid; state.ps = {type:"all", game:null, zone:null, shot:null, tab:"log", vsTeam:null, vsPlayer:null, scope:"all", logSeason:"cur"}; }
+    $("#pBack").href = "#" + lastView; $("#pBack").textContent = "← " + ($(`nav.menu a[data-view="${lastView}"]`)?.textContent || "Back");
+    v = "player"; window.scrollTo(0, 0);
+  } else if (v.startsWith("game-")) {
+    const gid = v.slice(5);
+    if (state.gid !== gid) { state.gid = gid; state.gs = {period:"1", scoring:false, tab:null}; }
+    const back = prevHash && !prevHash.startsWith("#game-") ? prevHash : "#" + lastView;
+    if (state.gs.tab == null) state.gs.fromPid = back.startsWith("#player-") ? back.slice(8) : null;
+    $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
+    v = "game"; window.scrollTo(0, 0);
+  } else if (!(v in VIEWS)) v = "injuries";
+  if (v !== "player" && v !== "game") lastView = v;
+  prevHash = location.hash;
+  for (const k in VIEWS) $("#view-" + k).hidden = k !== v;
+  const tab = v === "player" || v === "game" ? lastView : v;
+  document.querySelectorAll("nav.menu a").forEach(a => a.setAttribute("aria-current", a.dataset.view === tab ? "page" : "false"));
+  if (VIEWS[v]) VIEWS[v]();
+}
+
+function init(){
+  if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
+  leagueAvg();
+  const d = new Date(DATA.date + "T12:00:00Z");
+  $("#eyebrow").textContent = `TTFL · ${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}`;
+  $("#h1").textContent = "Picks for the night of " + d.toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long"});
+  const gen = new Date(DATA.generated);
+  $("#fresh").innerHTML = `<b>Updated ${esc(gen.toLocaleString(undefined, {timeZone: TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}))}</b><br>Refreshes every hour from 16:00 to 03:00 · all times are Paris time`;
+  const anyCur = DATA.players.some(p => p.cur.length);
+  if (!anyCur) { const n = $("#notice"); n.hidden = false; n.textContent = `No ${DATA.season} games have been played yet, so form comes from the ${DATA.prevSeason} season and each player's last 10 games (playoffs included). Rosters and injuries are current.`; }
+  renderSlate(); render();
+  $("#slate").addEventListener("click", e => { const b = e.target.closest("[data-game]"); if (!b) return; state.game = state.game === b.dataset.game ? null : b.dataset.game; renderSlate(); render(); });
+  $("#rows").addEventListener("click", e => { if (e.target.closest("[data-stop]")) return; const r = e.target.closest(".row.item"); if (!r) return; const id = r.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); render(); });
+  const lnToggle = e => { const b = e.target.closest("[data-evo]"); if (b) { const id = b.dataset.evo; state.evoClosed.has(id) ? state.evoClosed.delete(id) : state.evoClosed.add(id); renderLastNight(); return; } const r = e.target.closest(".lnrow[data-id]"); if (!r) return; const id = r.dataset.id; state.lnOpen.has(id) ? state.lnOpen.delete(id) : state.lnOpen.add(id); renderLastNight(); };
+  $("#lnList").addEventListener("click", lnToggle);
+  const lvToggle = e => { const b = e.target.closest("[data-evo]"); if (b) { const id = b.dataset.evo; state.evoClosed.has(id) ? state.evoClosed.delete(id) : state.evoClosed.add(id); renderLive(); return; } const r = e.target.closest(".lnrow[data-id]"); if (!r) return; const id = r.dataset.id; live.open.has(id) ? live.open.delete(id) : live.open.add(id); renderLive(); };
+  $("#lvList").addEventListener("click", lvToggle);
+  $("#lvList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lvToggle(e); document.querySelector(`#lvList .lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
+  $("#lvScores").addEventListener("click", e => { const b = e.target.closest("[data-g]"); if (!b) return; live.game = live.game === b.dataset.g ? null : b.dataset.g; renderLive(); });
+  $("#lvq").addEventListener("input", renderLive);
+  $("#lvRefresh").addEventListener("click", refreshLive);
+  try { $("#lvAuto").checked = localStorage.getItem("ttflLiveAuto") !== "0"; } catch (e) {}
+  $("#lvAuto").addEventListener("input", e => { try { localStorage.setItem("ttflLiveAuto", e.target.checked ? "1" : "0"); } catch (x) {} });
+  $("#lnList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lnToggle(e); document.querySelector(`.lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
+  ["#q", "#hideOut"].forEach(s => $(s).addEventListener("input", render));
+  ["#iq", "#iNext"].forEach(s => $(s).addEventListener("input", renderInjuries));
+  ["#fq", "#fNext"].forEach(s => $(s).addEventListener("input", renderForm));
+  const tn = DATA.teamNames || {};
+  $("#sTeam").insertAdjacentHTML("beforeend", Object.keys(DATA.rosters || tn).sort().map(t => `<option value="${esc(t)}">${esc(tn[t] || t)}</option>`).join(""));
+  $("#sTeam").addEventListener("input", renderSchedule);
+  $("#rq").addEventListener("input", renderRosters);
+  $("#rosterList").addEventListener("click", e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-pid]"); if (r) location.hash = "player-" + r.dataset.pid; });
+  $("#playerBody").addEventListener("click", onPlayerClick);
+  $("#gameBody").addEventListener("click", e => { const b = e.target.closest("[data-period]"); if (b) { state.gs.period = b.dataset.period; renderGame(); } const t = e.target.closest("[data-gtab]"); if (t) { state.gs.tab = t.dataset.gtab; renderGame(); } });
+  $("#gameBody").addEventListener("input", e => { if (e.target.id === "gScoring") { state.gs.scoring = e.target.checked; renderGame(); } });
+  $("#playerBody").addEventListener("input", e => { if (e.target.id === "psGame") { state.ps.game = e.target.value === "" ? null : +e.target.value; state.ps.shot = null; state.ps.zone = null; renderPlayer(); }
+    else if (e.target.id === "psLog") { state.ps.logSeason = e.target.value; state.ps.logN = 10; renderPlayer(); }
+    else if (e.target.id === "psTeam") { state.ps.vsTeam = e.target.value; renderPlayer(); }
+    else if (e.target.id === "psVsP") { state.ps.vsPlayer = e.target.value; renderPlayer(); } });
+  $("#tpick").addEventListener("click", e => { const b = e.target.closest("[data-team]"); if (!b) return; state.team = b.dataset.team; $("#rq").value = ""; renderRosters(); });
+  $("#iNextLabel").textContent = d.toLocaleDateString(undefined, {weekday:"long"});
+  renderDeadline(); setInterval(renderDeadline, 30000);
+  window.addEventListener("hashchange", showView);
+  showView();
+}
+init();
+</script>

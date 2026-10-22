@@ -1,0 +1,47 @@
+name: Build and publish dashboard
+
+on:
+  schedule:
+    - cron: "7 * * * *"   # every hour (UTC)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["build_data.py", "render_page.py", "template.html", ".github/workflows/pages.yml"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build data
+        run: |
+          for i in 1 2; do timeout 900 python3 build_data.py next data.json && break; sleep 30; done
+          mkdir -p site
+          python3 render_page.py data.json site/index.html
+      - name: Save shot cache
+        run: |
+          git config user.name "ttfl-bot"
+          git config user.email "ttfl-bot@users.noreply.github.com"
+          git add cache
+          git diff --cached --quiet || (git commit -m "Update shot cache" && git push)
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
