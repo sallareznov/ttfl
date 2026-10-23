@@ -88,7 +88,7 @@ button.btn:disabled{opacity:.55;cursor:default}
 @media (max-width:640px){nav.menu{display:none}}
 .home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .home h1{grid-column:1/-1;font-size:2rem;text-align:center;margin:4px 0}
-a.tileh{display:flex;flex-direction:column;gap:10px;min-height:128px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none}
+a.tileh{min-width:0;display:flex;flex-direction:column;gap:10px;min-height:128px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none}
 a.tileh:hover{border-color:var(--accent)}
 a.tileh:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 a.tileh .th{display:flex;align-items:center;gap:8px}
@@ -99,10 +99,10 @@ a.tileh .stat{margin-top:auto}
 a.tileh .stat>b{display:block;font-family:var(--display);font-size:2rem;font-weight:700;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
 a.tileh .val{display:block;font-size:.85rem;color:var(--muted);margin-top:3px}
 a.tileh .val b{color:var(--ink);font-weight:600;white-space:nowrap}
-a.tileh .rows{display:grid;font-size:.95rem}
+a.tileh .rows{display:grid;grid-template-columns:minmax(0,1fr);font-size:.95rem}
 a.tileh .rows div{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;padding:5px 0;border-top:1px solid var(--line)}
 a.tileh .rows div:first-child{border-top:0;padding-top:0}
-a.tileh .rows span:first-child{overflow:hidden;text-overflow:ellipsis}
+a.tileh .rows span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 a.tileh .rows .n{font-family:var(--display);font-weight:700;font-size:1.1rem;line-height:1.1;font-variant-numeric:tabular-nums}
 a.tileh .rows div:first-child .n{color:var(--accent)}
 .tileh.wide{grid-column:1/-1}
@@ -1420,7 +1420,7 @@ function renderHome(){
   const stat = (big, txt) => `<div class="stat"><b>${big}</b><span class="val">${txt}</span></div>`;
   const d = deadlineInfo(), ms = d ? d.when - Date.now() : 0;
   const left = !d ? "" : ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)} h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}</b>`;
-  const form = Object.values(DATA.recent || {}).filter(e => e.rows.length >= 2).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 3);
+  const form = Object.values(DATA.recent || {}).filter(e => e.rows.length >= 2).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 5);
   const nt = nextTeams(), inj = (DATA.injuryList || []).filter(i => nt.has(i.team));
   const out = inj.filter(i => injuryInfo(i).cls === "out").length;
   const next = (DATA.schedule || []).slice(1).find(x => x.games.length);
@@ -1432,7 +1432,7 @@ function renderHome(){
     ${tile("picks", "tonight", "Tonight", stat(DATA.games.length, `game${DATA.games.length === 1 ? "" : "s"}${left ? "<br>" + left : ""}`))}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
-    ${tile("form", "form", "In form", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
+    ${tile("form", "form", "Averages", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
     ${tile("schedule", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
     ${tile("rosters", "rosters", "Rosters", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
     ${tile("schedule", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(teamShort(x.t))}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`, "wide")}`;
