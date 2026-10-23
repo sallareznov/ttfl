@@ -260,6 +260,7 @@ button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var
 .best .brow{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:.88rem;padding:3px 0}
 .best .brow>span{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .best .brow .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.best .bproj{color:var(--accent);font-family:var(--display);font-size:1.05rem}
 .best .vd{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px}
 .best .vd.use{background:var(--ok-soft);color:var(--ok)}.best .vd.wait{background:var(--qs-soft);color:var(--qs)}
 
@@ -878,7 +879,7 @@ function renderBest(rows){
       <div class="sub">${esc(b.p.team)} ${b.home ? "vs" : "@"} ${esc(b.opp)} · ${b.b.n5 && b.b.n5 < 5 ? `L${b.b.n5}` : "L5"} ${f1(b.b.cur5)}${b.factors.filter(x => Math.abs(x.pts) >= .05).map(x => ` · ${esc(x.label)} ${pts(x.pts)}`).join("")}</div></div>
       <div class="exp num">${f1(Math.max(b.exp, 0))}<small>projected</small></div></a>
     <div class="bnext">Next best: ${top.slice(1, 3).map(r => `<a href="#player-${esc(r.p.id)}">${esc(r.p.name)}</a> ${f1(Math.max(r.exp, 0))}`).join(" · ")}</div>
-    <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><span>${verdict(r)}</span></div>`).join("")}
+    <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><b class="bproj num">${f1(Math.max(r.exp, 0))}</b><span>${verdict(r)}</span></div>`).join("")}
     <p class="small muted">Compares tonight's projection with all his games in the next two weeks. "Wait" means a later game projects at least 1 TTFL point more. Later games use season scoring only (no betting lines or injury news yet).</p></div>`;
 }
 
