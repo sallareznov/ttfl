@@ -545,8 +545,8 @@ details.method[open]>summary::after{content:" ▾"}
     <summary>How the ranking works</summary>
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
-    <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
-    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
+    <p><b>Matchup</b> compares each team's expected points (its scoring averaged with the opponent's points allowed) to the league average. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
+    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, rosters, injury report and game logs.</p>
   </details>
   </div>
 
@@ -682,17 +682,12 @@ function project(p, outMinByTeam){
   if (!b || !g) { res.proj = null; res.exp = -1; return res; }
   const add = (label, m, note) => { res.factors.push({label, m, note, pts: b.form * res.mult * (m - 1)}); res.mult *= m; };
   // matchup: expected team points vs league average
-  let teamPts, how;
-  if (g.overUnder && g.spread != null && g.favorite) {
-    teamPts = g.overUnder / 2 + (g.favorite === p.team ? g.spread / 2 : -g.spread / 2); how = "betting line";
-  } else {
-    const me = teamNumbers(p.team), them = teamNumbers(opp);
-    if (me && them && me.pf && them.pa) { teamPts = (me.pf + them.pa) / 2; how = "season scoring"; }
-  }
-  if (teamPts) add("Matchup", 1 + .8 * (teamPts / LG - 1), `${p.team} expected ${teamPts.toFixed(1)} pts (${how}), league avg ${LG.toFixed(1)}`);
+  let teamPts;
+  const me = teamNumbers(p.team), them = teamNumbers(opp);
+  if (me && them && me.pf && them.pa) teamPts = (me.pf + them.pa) / 2;
+  if (teamPts) add("Matchup", 1 + .8 * (teamPts / LG - 1), `${p.team} expected ${teamPts.toFixed(1)} pts (season scoring), league avg ${LG.toFixed(1)}`);
   add(home ? "Home" : "Away", home ? 1.015 : .985, home ? "Home game" : "Road game");
   if (g.b2b && g.b2b.includes(p.team)) add("Back-to-back", .95, `${p.team} played yesterday`);
-  if (g.spread != null && g.spread >= 10 && b.sMin >= 24) add("Blowout risk", .95, `Spread ${g.spread}: starters may sit late`);
   const om = outMinByTeam[p.team];
   if (om && om.min >= 15 && b.sMin >= 20) {
     const own = om.names.includes(p.name) ? 0 : 1;
@@ -800,7 +795,7 @@ function renderSlate(){
     const b2b = (g.b2b || []).map(x => `<span class="tag">${esc(x)} back-to-back</span>`).join(" ");
     return `<button type="button" class="game" data-game="${esc(g.id)}" aria-pressed="${state.game === g.id}">
       <span class="teams">${logoImg(g.away)}${esc(g.away)} <span class="muted">@</span> ${logoImg(g.home)}${esc(g.home)}</span>
-      <span class="meta"><span>${t}</span>${g.oddsText ? `<span>${esc(g.oddsText)}</span>` : ""}${g.overUnder ? `<span>O/U ${g.overUnder}</span>` : ""}</span>
+      <span class="meta"><span>${t}</span></span>
       ${b2b ? `<span>${b2b}</span>` : ""}</button>`;
   }).join("") || `<div class="muted">No NBA games on this date.</div>`;
 }
@@ -1080,7 +1075,7 @@ function schedGame(g){
   const when = done ? `<b>Final</b>${g.detail && g.detail !== "Final" ? " " + esc(g.detail.replace(/^Final\/?/, "")) : ""}` : live ? `<span class="live">Live · ${esc(g.detail || "")}</span>` : `<b>${esc(parisClock(new Date(g.time)))}</b>`;
   const open = done && (DATA.gamePages || {})[g.id], tag = open ? "a" : "div";
   return `<${tag} class="sgame ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
-    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
+    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
 }
 function renderSchedule(){
   const team = $("#sTeam").value, days = DATA.schedule || [];
