@@ -858,7 +858,7 @@ function upcoming(r, n = 4){
 }
 function renderBest(rows){
   const el = $("#best");
-  const top = rows.filter(r => r.b && r.g && r.inj.prob > 0).sort((a, b) => b.exp - a.exp).slice(0, 5);
+  const top = rows.filter(r => r.b && r.g && r.inj.prob > 0).sort((a, b) => b.exp - a.exp).slice(0, 10);
   if (!top.length) { el.hidden = true; return; }
   const wd = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"});
   const vs = r => `${r.home ? "vs" : "@"} ${esc(r.opp)}`;
