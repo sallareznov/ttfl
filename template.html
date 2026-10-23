@@ -538,12 +538,13 @@ details.method[open]>summary::after{content:" ▾"}
   </div>
 
   <section class="board" aria-label="Ranked players">
-    <div class="row head"><div>Player</div><div>Expected</div><div>Form</div><div>Last 10</div><div>Tonight's factors</div></div>
+    <div class="row head"><div>Player</div><div>Last 5 avg</div><div>Form</div><div>Last 10</div><div>Tonight's factors</div></div>
     <div id="rows"></div>
   </section>
 
   <details class="method">
     <summary>How the ranking works</summary>
+    <p>The list is ordered by each player's <b>average TTFL score over his last 5 games</b>. The smaller "proj" number is tonight's projection, explained below.</p>
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
     <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
@@ -763,7 +764,7 @@ function render(){
     if (hideOut && r.inj.prob === 0) return false;
     if (q && !norm(r.p.name + r.p.team).includes(q)) return false;
     return true;
-  }).sort((a, b) => b.exp - a.exp || (b.b ? 1 : 0) - (a.b ? 1 : 0));
+  }).sort((a, b) => (b.b ? b.b.l5 : -1e9) - (a.b ? a.b.l5 : -1e9) || b.exp - a.exp);
   const html = rows.map(r => {
     const p = r.p, b = r.b;
     const trend = b && b.sMin ? b.l5Min / b.sMin : 1;
@@ -775,9 +776,9 @@ function render(){
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
         <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.tone}">${r.inj.label}</span></div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
-      <div class="expc"><div class="exp num">${b ? f1(Math.max(r.exp, 0)) : "–"}<small>${b ? "proj " + f1(r.proj) : "no NBA games"}</small></div></div>
-      <div class="form num">${b ? `<span>Season <b>${f1(b.season)}</b> · L10 <b>${f1(b.l10)}</b> · L5 <b>${f1(b.l5)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
-      <div class="sp">${b ? spark(b.L10.map(ttfl), b.season) : ""}</div>
+      <div class="expc"><div class="exp num">${b ? f1(b.l5) : "–"}<small>${b ? "L5 · proj " + f1(Math.max(r.exp, 0)) : "no NBA games"}</small></div></div>
+      <div class="form num">${b ? `<span>L10 <b>${f1(b.l10)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
+      <div class="sp">${b ? spark(b.L10.map(ttfl), b.l5) : ""}</div>
       <div class="chips">${chips}${vsLine(r)}</div>
       ${open ? detail(r) : ""}
     </div>`;
