@@ -1022,29 +1022,33 @@ async function refreshLive(){
     live.msg = live.blocked ? "Live scores can't load in this copy of the page." : "Couldn't reach ESPN just now. Scores will retry on the next refresh.";
   }
   live.busy = false;
-  if (!$("#view-live").hidden) renderLive(); else renderLiveStatus();
+  if (!$("#view-live").hidden) renderLive(); else if (!$("#view-home").hidden) renderHome(); else renderLiveStatus();
 }
 function startLive(){
   if (live.started) return; live.started = true;
   refreshLive();
   setInterval(() => {
     const every = liveOn() ? 30000 : 5 * 60000;
-    if ($("#lvAuto").checked && !$("#view-live").hidden && document.visibilityState === "visible" && Date.now() - live.last >= every) refreshLive();
+    const shown = !$("#view-live").hidden || !$("#view-home").hidden;
+    if ($("#lvAuto").checked && shown && document.visibilityState === "visible" && Date.now() - live.last >= every) refreshLive();
   }, 5000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && $("#lvAuto").checked && !$("#view-live").hidden && Date.now() - live.last > 20000) refreshLive(); });
 }
+const liveDay = d => d.date ? `${d.date.slice(0, 4)}-${d.date.slice(4, 6)}-${d.date.slice(6)}` : null;
+// every player in tonight's live box scores, best TTFL score first
+const liveRows = d => d.games.flatMap(g => g.players.map(p => {
+  const r = [liveDay(d), ...p[4]];
+  return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
+})).sort((a, b) => b.s - a.s);
 function renderLive(){
   startLive();
   const d = live.doc;
   renderLiveStatus();
   if (!d) { $("#lvList").innerHTML = `<div class="empty">${live.busy ? "Loading live scores…" : "No live scores yet."}</div>`; return; }
-  const day = d.date ? `${d.date.slice(0, 4)}-${d.date.slice(4, 6)}-${d.date.slice(6)}` : null;
+  const day = liveDay(d);
   $("#lvTitle").textContent = "Live TTFL scores" + (day ? ", " + fmtLong(day) : "");
   const q = norm($("#lvq").value || "");
-  const rows = d.games.flatMap(g => g.players.map(p => {
-    const r = [day, ...p[4]];
-    return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
-  })).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q)).sort((a, b) => b.s - a.s);
+  const rows = liveRows(d).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q));
   const started = d.games.some(g => g.state !== "pre");
   const tier = s => s >= 30 ? "t2" : s >= 20 ? "t3" : "";
   $("#lvList").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("live", rows, q).map((x, k) => {
@@ -1409,6 +1413,7 @@ function standings(){
 }
 const teamShort = t => { const n = (DATA.teamNames || {})[t] || t; return n.endsWith("Trail Blazers") ? "Trail Blazers" : n.split(" ").pop(); };
 function renderHome(){
+  startLive();
   const tile = (href, k, label, body, cls = "") => `<a class="tileh ${cls}" href="#${href}">${icon(k)}${body}<span class="lbl">${label}</span></a>`;
   const d = deadlineInfo(), ms = d ? d.when - Date.now() : 0;
   const left = !d ? "" : ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)} h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}</b>`;
@@ -1417,11 +1422,13 @@ function renderHome(){
   const out = inj.filter(i => injuryInfo(i).cls === "out").length;
   const next = (DATA.schedule || []).slice(1).find(x => x.games.length);
   const liveTxt = live.doc && liveOn() ? `<b>${live.doc.games.filter(g => g.state === "in").length} live</b>` : d ? `First tip-off ${esc(parisClock(new Date(d.first.time)))}` : "";
+  // live box scores load only where outside sites are reachable (GitHub Pages), so claude.ai keeps the plain tile
+  const liveTop = live.doc && live.doc.games.some(g => g.state !== "pre") ? liveRows(live.doc).slice(0, 5) : [];
   const [west, east] = standings();
   $("#view-home").innerHTML = `<h1>TTFL</h1>
     ${tile("picks", "tonight", "Tonight", `<span class="val">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${left ? "<br>" + left : ""}</span>`)}
     ${tile("injuries", "injuries", "Injuries", `<span class="val">${inj.length} on tonight's teams${out ? `<br><b>${out} out</b>` : ""}</span>`)}
-    ${tile("live", "live", "Live", `<span class="val">${liveTxt}</span>`)}
+    ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`, "list") : tile("live", "live", "Live", `<span class="val">${liveTxt}</span>`)}
     ${tile("form", "form", "In form", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`, "list")}
     ${tile("schedule", "schedule", "Schedule", `<span class="val">${next ? `Next: ${esc(fmtDay(next.date))} · ${next.games.length} games` : ""}</span>`)}
     ${tile("rosters", "rosters", "Rosters", `<span class="val">30 teams · ${Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0)} players</span>`)}
