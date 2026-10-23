@@ -260,6 +260,7 @@ button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var
 .best .brow{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:.88rem;padding:3px 0}
 .best .brow>span{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .best .brow .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.best .bproj{color:var(--accent);font-family:var(--display);font-size:1.05rem}
 .best .vd{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px}
 .best .vd.use{background:var(--ok-soft);color:var(--ok)}.best .vd.wait{background:var(--qs-soft);color:var(--qs)}
 
@@ -587,7 +588,7 @@ details.method[open]>summary::after{content:" ▾"}
 
   <details class="method">
     <summary>How the ranking works</summary>
-    <p>The list is ordered by each player's <b>average TTFL score over his last 5 games</b>. The smaller "proj" number is tonight's projection, explained below.</p>
+    <p>The list is ordered by each player's <b>average TTFL score over his last 5 games this season</b> (fewer early in the season; last season is not counted). The smaller "proj" number is tonight's projection, explained below.</p>
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
     <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
@@ -722,7 +723,9 @@ function base(p){
   const L10 = all.slice(0, 10), L5 = all.slice(0, 5);
   const season = blend(ttfl), l10 = mean(L10, ttfl), l5 = mean(L5, ttfl);
   const sMin = blend(r => r[3]), l5Min = mean(L5, r => r[3]);
-  return {all, L10, season, l10, l5, form: .5 * season + .3 * l10 + .2 * l5, sMin, l5Min, gp: cur.length || prev.length || all.length};
+  // shown "last 5": this season only, up to 5 games
+  const C5 = cur.slice().sort((a, b) => a[0] < b[0] ? 1 : -1).slice(0, 5), cur5 = C5.length ? mean(C5, ttfl) : null;
+  return {all, L10, season, l10, l5, cur5, n5: C5.length, form: .5 * season + .3 * l10 + .2 * l5, sMin, l5Min, gp: cur.length || prev.length || all.length};
 }
 
 function project(p, outMinByTeam){
@@ -818,7 +821,7 @@ function render(){
     if (hideOut && r.inj.prob === 0) return false;
     if (q && !norm(r.p.name + r.p.team).includes(q)) return false;
     return true;
-  }).sort((a, b) => (b.b ? b.b.l5 : -1e9) - (a.b ? a.b.l5 : -1e9) || b.exp - a.exp);
+  }).sort((a, b) => (b.b && b.b.cur5 != null ? b.b.cur5 : -1e9) - (a.b && a.b.cur5 != null ? a.b.cur5 : -1e9) || b.exp - a.exp);
   const html = rows.map(r => {
     const p = r.p, b = r.b;
     const trend = b && b.sMin ? b.l5Min / b.sMin : 1;
@@ -830,7 +833,7 @@ function render(){
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
         <div style="min-width:0"><div class="nmrow">${ROSTER_BY_ID()[p.id] ? `<a class="name plink" href="#player-${esc(p.id)}">${esc(p.name)}</a>` : `<span class="name">${esc(p.name)}</span>`}<span class="pill ${r.inj.tone}">${r.inj.label}</span>${r.g && r.g.b2b && r.g.b2b.includes(p.team) ? `<span class="tag" title="${esc(p.team)} played yesterday">B2B</span>` : ""}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
-      <div class="expc"><div class="exp num">${b ? f1(b.l5) : "–"}<small>${b ? "L5 · proj " + f1(Math.max(r.exp, 0)) : "no NBA games"}</small></div></div>
+      <div class="expc"><div class="exp num">${b ? f1(b.cur5) : "–"}<small>${b ? (b.n5 && b.n5 < 5 ? `L${b.n5}` : "L5") + " · proj " + f1(Math.max(r.exp, 0)) : "no NBA games"}</small></div></div>
       <div class="form num">${b ? `<span>L10 <b>${f1(b.l10)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
       <div class="sp">${b ? spark(b.L10.map(ttfl), b.l5) : ""}</div>
       <div class="chips">${chips}${vsLine(r)}</div>
@@ -873,10 +876,10 @@ function renderBest(rows){
   el.hidden = false;
   el.innerHTML = `<div class="bhead"><span class="lbl">Best pick tonight</span></div>
     <a class="bmain" href="#player-${esc(b.p.id)}">${logoImg(b.p.team)}<div style="min-width:0"><div class="nmrow"><span class="name">${esc(b.p.name)}</span><span class="pill ${b.inj.tone}">${b.inj.label}</span></div>
-      <div class="sub">${esc(b.p.team)} ${b.home ? "vs" : "@"} ${esc(b.opp)} · L5 ${f1(b.b.l5)}${b.factors.filter(x => Math.abs(x.pts) >= .05).map(x => ` · ${esc(x.label)} ${pts(x.pts)}`).join("")}</div></div>
+      <div class="sub">${esc(b.p.team)} ${b.home ? "vs" : "@"} ${esc(b.opp)} · ${b.b.n5 && b.b.n5 < 5 ? `L${b.b.n5}` : "L5"} ${f1(b.b.cur5)}${b.factors.filter(x => Math.abs(x.pts) >= .05).map(x => ` · ${esc(x.label)} ${pts(x.pts)}`).join("")}</div></div>
       <div class="exp num">${f1(Math.max(b.exp, 0))}<small>projected</small></div></a>
     <div class="bnext">Next best: ${top.slice(1, 3).map(r => `<a href="#player-${esc(r.p.id)}">${esc(r.p.name)}</a> ${f1(Math.max(r.exp, 0))}`).join(" · ")}</div>
-    <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><span>${verdict(r)}</span></div>`).join("")}
+    <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><b class="bproj num">${f1(Math.max(r.exp, 0))}</b><span>${verdict(r)}</span></div>`).join("")}
     <p class="small muted">Compares tonight's projection with all his games in the next two weeks. "Wait" means a later game projects at least 1 TTFL point more. Later games use season scoring only (no betting lines or injury news yet).</p></div>`;
 }
 
@@ -1449,7 +1452,7 @@ function renderPreview(){
   const head = `<div class="ghead">${team(0)}<span class="muted">@</span>${team(1)}<div class="gmeta">${meta}${b2b.length ? `<div>${b2b.map(t => `<span class="tag">${esc(t)} B2B</span>`).join(" ")}</div>` : ""}</div></div>`;
   // best TTFL options
   const best = t => ((R[t] || {}).players || []).map(p => {
-    const played = (p.log || []).filter(r => r[3] > 0), l5 = played.length ? mean(played.slice(0, 5), ttfl) : null;
+    const played = (p.log || []).slice(0, p.gp || 0).filter(r => r[3] > 0), l5 = played.length ? mean(played.slice(0, 5), ttfl) : null;
     const inj = injById[p.id], info = injuryInfo(inj);
     return {p, l5, info, season: p.gp ? p.avg : null};
   }).filter(x => x.l5 != null).sort((x, y) => y.l5 - x.l5).slice(0, 5);
