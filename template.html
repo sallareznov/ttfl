@@ -202,6 +202,8 @@ svg.evo .ar{fill:var(--accent-soft)}
 @media (max-width:640px){.hright{justify-items:start}}
 #fresh b{color:var(--ink);font-weight:600}
 @media (max-width:640px){#fresh{text-align:left}}
+/* the pick deadline banner only belongs on the Picks tab */
+:root:not([data-view="picks"]) #deadline{display:none!important}
 .deadline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:12px 16px;border-radius:10px;background:var(--ink);color:var(--bg)}
 .deadline .dl-label{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:.85rem;font-weight:600;opacity:.75}
 .deadline .dl-time{font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1;letter-spacing:.02em}
