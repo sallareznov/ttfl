@@ -1,4 +1,9 @@
 <title>TTFL</title>
+<script>
+// before first paint: saved theme, and no scroll restore on reload (the page renders in pieces, so the restored spot lands mid-page)
+try { if (localStorage.getItem("ttflTheme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -535,9 +540,9 @@ details.method[open]>summary::after{content:" ▾"}
   </nav>
 
 
-  <div class="view home" id="view-home"></div>
+  <div class="view home" id="view-home" hidden></div>
 
-  <div class="view" id="view-picks">
+  <div class="view" id="view-picks" hidden>
   <div class="notice" id="notice" hidden></div>
   <section aria-label="Tonight's games"><div class="slate" id="slate"></div></section>
 
@@ -1437,7 +1442,7 @@ function renderHome(){
 }
 
 const VIEWS = {home: renderHome, picks: null, live: renderLive, injuries: renderInjuries, form: renderForm, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
-let lastView = "rosters", prevHash = "";
+let lastView = "rosters", prevHash = "", curView = null;
 const toTop = () => window.scrollTo(0, 0);
 function showView(){
   let v = (location.hash || "").slice(1);
@@ -1458,6 +1463,7 @@ function showView(){
   if (v !== "player" && v !== "game") lastView = v;
   prevHash = location.hash;
   for (const k in VIEWS) $("#view-" + k).hidden = k !== v;
+  if (v !== curView) { curView = v; toTop(); }
   document.documentElement.dataset.view = v;
   const tab = v === "player" || v === "game" ? lastView : v;
   document.querySelectorAll("a[data-view]").forEach(a => a.setAttribute("aria-current", a.dataset.view === tab ? "page" : "false"));
