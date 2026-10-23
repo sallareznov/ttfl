@@ -9,6 +9,7 @@
   --accent:#d4570f; --accent-soft:#fbe7da;
   --ok:#1f7a4d; --ok-soft:#dcf1e6; --warn:#9a6400; --warn-soft:#fbefcf; --bad:#b3261e; --bad-soft:#f8dedc;
   --spark:#9aa3b5;
+  --tile:#20232b; --tile-ink:#f3f4f7; --tile-muted:#a7aebd;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -16,12 +17,12 @@
   --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
   --accent:#f07a35; --accent-soft:#3a2416;
   --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
-  --spark:#5d6577; color-scheme:dark}}
+  --spark:#5d6577; --tile:#232834; --tile-ink:#e9ecf2; --tile-muted:#98a0b2; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
   --accent:#f07a35; --accent-soft:#3a2416;
   --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
-  --spark:#5d6577; color-scheme:dark}
+  --spark:#5d6577; --tile:#232834; --tile-ink:#e9ecf2; --tile-muted:#98a0b2; color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .wrap>*{min-width:0}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:20px}
@@ -84,24 +85,35 @@ nav.menu a:hover{color:var(--ink)}
 .score .gst.on{color:var(--bad);font-weight:600}
 .lvtag{color:var(--bad);font-weight:600}
 button.btn:disabled{opacity:.55;cursor:default}
-/* phone navigation: bottom tab bar with a "More" sheet for the rest. The page is an app shell on phones
-   (the content scrolls inside .wrap, the bar is a normal flex item below it) because mobile WebKit can slide
-   position:fixed bottom bars under the browser's own bottom toolbar. */
-.bnav,.bsheet{display:none}
-@media (max-width:640px){
-  nav.menu{display:none}
-  html,body{height:var(--apph,100dvh);overflow:hidden}
-  body{display:flex;flex-direction:column}
-  .wrap{flex:1 1 auto;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
-  .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:0 0 auto;position:relative;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
-  .bnav a,.bnav button{display:grid;justify-items:center;gap:2px;padding:5px 0 3px;font:inherit;font-size:.68rem;font-weight:600;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
-  .bnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .bnav [aria-current="page"]{color:var(--accent)}
-  .bsheet:not([hidden]){display:grid;position:fixed;right:8px;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:21;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden}
-  .bsheet a{padding:12px 16px;color:var(--ink);text-decoration:none;font-family:var(--display);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.05em;border-top:1px solid var(--line)}
-  .bsheet a:first-child{border-top:0}
-  .bsheet a[aria-current="page"]{color:var(--accent)}
-}
+/* home: a grid of tiles that leads to every section; on phones it replaces the menu */
+@media (max-width:640px){nav.menu{display:none}}
+.home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.home h1{grid-column:1/-1;font-size:2rem;text-align:center;margin:4px 0}
+a.tileh{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:150px;padding:14px;border-radius:18px;background:var(--tile);color:var(--tile-ink);text-decoration:none;overflow:hidden}
+a.tileh:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a.tileh .ic{position:absolute;top:0;left:0;width:54px;height:54px;display:grid;place-items:center;background:var(--bg);border-bottom-right-radius:16px}
+a.tileh .ic svg{width:28px;height:28px;fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+a.tileh .lbl{font-family:var(--display);font-weight:600;font-size:1.45rem;letter-spacing:.02em;text-align:right;line-height:1.1}
+a.tileh .val{font-size:.9rem;color:var(--tile-muted);text-align:right}
+a.tileh .val b{color:var(--accent);font-weight:600}
+a.tileh.list{justify-content:flex-start;padding-top:66px}
+a.tileh.list .lbl{position:absolute;top:14px;right:14px}
+a.tileh .rows{display:grid;gap:7px;font-size:.98rem}
+a.tileh .rows div{display:flex;justify-content:space-between;gap:8px;white-space:nowrap}
+a.tileh .rows span:first-child{overflow:hidden;text-overflow:ellipsis}
+a.tileh .rows div:first-child{color:var(--accent)}
+a.tileh .rows .n{font-variant-numeric:tabular-nums}
+a.tileh.tall{grid-row:span 2}
+.tileh.wide{grid-column:1/-1}
+.stand{grid-column:1/-1;display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr);gap:7px 10px;font-size:.98rem}
+.stand .h{font-family:var(--display);font-weight:700;letter-spacing:.08em;color:var(--tile-muted)}
+.stand .r{color:var(--tile-muted);font-size:.75rem;margin-left:5px}
+.stand .k{color:var(--tile-muted)}
+.stand .top{color:var(--accent)}
+.home-link{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none}
+:root[data-view="home"] .home-link{display:none}
+@media (min-width:641px){.home-link{display:none}}
+@media (max-width:640px){.home{gap:10px}a.tileh{min-height:132px;padding:12px;border-radius:16px}a.tileh .lbl{font-size:1.25rem}a.tileh .rows{font-size:.9rem;gap:6px}.stand{font-size:.88rem}}
 /* live page: no page title, compact deadline and controls */
 :root[data-view="live"] header>div:first-child,:root[data-view="live"] #lvTitle{display:none}
 :root[data-view="live"] header{justify-content:flex-end}
@@ -507,21 +519,24 @@ details.method[open]>summary::after{content:" ▾"}
 <div class="wrap">
   <header>
     <div>
+      <a class="home-link" href="#home">← Home</a>
       <div class="eyebrow" id="eyebrow">TTFL</div>
     </div>
     <div class="hright"><div class="small muted" id="fresh"></div><button class="ghost" type="button" id="themeBtn"></button></div>
   </header>
   <div class="deadline" id="deadline" hidden></div>
   <nav class="menu" aria-label="Sections">
+    <a href="#home" data-view="home">Home</a>
     <a href="#injuries" data-view="injuries">Injury report</a>
     <a href="#picks" data-view="picks">Tonight</a>
     <a href="#live" data-view="live">Live</a>
     <a href="#form" data-view="form">In form</a>
-    <a href="#lastnight" data-view="lastnight">Last night</a>
     <a href="#schedule" data-view="schedule">Schedule</a>
     <a href="#rosters" data-view="rosters">Rosters</a>
   </nav>
 
+
+  <div class="view home" id="view-home"></div>
 
   <div class="view" id="view-picks">
   <div class="notice" id="notice" hidden></div>
@@ -565,11 +580,6 @@ details.method[open]>summary::after{content:" ▾"}
     <div class="list" id="formList"></div>
   </div>
 
-  <div class="view" id="view-lastnight" hidden>
-    <h2 id="lnTitle">Last night</h2>
-    <div class="scores" id="lnScores"></div>
-    <div class="list" id="lnList"></div>
-  </div>
 
   <div class="view" id="view-live" hidden>
     <h2 id="lvTitle">Live TTFL scores</h2>
@@ -580,6 +590,10 @@ details.method[open]>summary::after{content:" ▾"}
       <span class="st" id="lvStatus" role="status" aria-live="polite"></span>
     </div>
     <div class="list" id="lvList"></div>
+    <!-- last night's final scores live under the live list: they come from the hourly build, so they also show on claude.ai, where live scores can't load -->
+    <h2 id="lnTitle">Last night</h2>
+    <div class="scores" id="lnScores"></div>
+    <div class="list" id="lnList"></div>
   </div>
 
   <div class="view" id="view-schedule" hidden>
@@ -610,14 +624,6 @@ details.method[open]>summary::after{content:" ▾"}
     <div class="view" id="gameBody"></div>
   </div>
 </div>
-<nav class="bnav" aria-label="Sections">
-  <a href="#picks" data-view="picks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>Tonight</a>
-  <a href="#injuries" data-view="injuries"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>Injuries</a>
-  <a href="#live" data-view="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/></svg>Live</a>
-  <a href="#lastnight" data-view="lastnight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Last night</a>
-  <button type="button" id="bmore" aria-expanded="false" aria-controls="bsheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>More</button>
-</nav>
-<div class="bsheet" id="bsheet" hidden><a href="#form" data-view="form">In form</a><a href="#schedule" data-view="schedule">Schedule</a><a href="#rosters" data-view="rosters">Rosters</a></div>
 
 <script>
 // light by default; the header button switches to dark and the choice is remembered on this device
@@ -1405,15 +1411,56 @@ function onPlayerClick(e){
   const g = t.closest("tr[data-g]"); if (g) { ps.game = ps.tab === "shots" && ps.game === +g.dataset.g ? null : +g.dataset.g; ps.tab = "shots"; ps.shot = null; ps.zone = null; renderPlayer(); }
 }
 
-const VIEWS = {picks: null, live: renderLive, injuries: renderInjuries, form: renderForm, lastnight: renderLastNight, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
+// ---- home ----
+const WEST = new Set(["DAL","DEN","GS","HOU","LAC","LAL","MEM","MIN","NO","OKC","PHX","POR","SAC","SA","UTAH"]);
+const ICONS = {
+  tonight: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c3.5 3.5 3.5 9.3 0 12.8M18.4 5.6c-3.5 3.5-3.5 9.3 0 12.8"/>',
+  injuries: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  live: '<circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/>',
+  recap: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  form: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
+  schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  rosters: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',
+  standings: '<path d="M4 20V13h4v7M10 20V8h4v12M16 20v-5h4v5M12 3l1 2 2 .3-1.5 1.4.4 2.1-1.9-1-1.9 1 .4-2.1L9 5.3l2-.3z"/>'};
+const icon = k => `<span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg></span>`;
+const initialName = n => { const p = n.split(" "); return p.length > 1 ? p[0][0] + ". " + p.slice(1).join(" ") : n; };
+function standings(){
+  // latest record per team from the schedule (records as of each game) and last night's results
+  const rec = {};
+  const note = (t, r, when) => { if (r && (!rec[t] || when < rec[t].when)) rec[t] = {r, when}; };
+  (DATA.schedule || []).forEach(d => d.games.forEach(g => { note(g.home, g.homeRec, d.date); note(g.away, g.awayRec, d.date); }));
+  const pct = r => { const [w, l] = r.split("-").map(Number); return w + l ? w / (w + l) : 0; };
+  const side = west => Object.entries(rec).filter(([t]) => WEST.has(t) === west).map(([t, x]) => ({t, r: x.r, p: pct(x.r), w: +x.r.split("-")[0]})).sort((a, b) => b.p - a.p || b.w - a.w).slice(0, 6);
+  return [side(true), side(false)];
+}
+const teamShort = t => { const n = (DATA.teamNames || {})[t] || t; return n.endsWith("Trail Blazers") ? "Trail Blazers" : n.split(" ").pop(); };
+function renderHome(){
+  const tile = (href, k, label, body, cls = "") => `<a class="tileh ${cls}" href="#${href}">${icon(k)}${body}<span class="lbl">${label}</span></a>`;
+  const d = deadlineInfo(), ms = d ? d.when - Date.now() : 0;
+  const left = !d ? "" : ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)} h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}</b>`;
+  const ln = DATA.lastNight;
+  const recap = ln ? Object.values(DATA.recent || {}).flatMap(e => e.rows.filter(r => r[0] === ln.date).map(r => ({n: e.name, s: ttfl(r)}))).sort((a, b) => b.s - a.s).slice(0, 7) : [];
+  const form = Object.values(DATA.recent || {}).filter(e => e.rows.length >= 2).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 3);
+  const nt = nextTeams(), inj = (DATA.injuryList || []).filter(i => nt.has(i.team));
+  const out = inj.filter(i => injuryInfo(i).cls === "out").length;
+  const next = (DATA.schedule || []).slice(1).find(x => x.games.length);
+  const liveTxt = live.doc && liveOn() ? `<b>${live.doc.games.filter(g => g.state === "in").length} live</b>` : d ? `First tip-off ${esc(parisClock(new Date(d.first.time)))}` : "";
+  const [west, east] = standings();
+  const rows = list => list.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.s != null ? x.s : x.a.toFixed(1)}</span></div>`).join("");
+  $("#view-home").innerHTML = `<h1>TTFL</h1>
+    ${tile("picks", "tonight", "Tonight", `<span class="val">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${left ? "<br>" + left : ""}</span>`)}
+    ${tile("live", "recap", "Last night", recap.length ? `<div class="rows">${rows(recap)}</div>` : `<span class="val">No games</span>`, "list tall")}
+    ${tile("injuries", "injuries", "Injuries", `<span class="val">${inj.length} on tonight's teams${out ? `<br><b>${out} out</b>` : ""}</span>`)}
+    ${tile("live", "live", "Live", `<span class="val">${liveTxt}</span>`)}
+    ${tile("form", "form", "In form", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`, "list")}
+    ${tile("schedule", "schedule", "Schedule", `<span class="val">${next ? `Next: ${esc(fmtDay(next.date))} · ${next.games.length} games` : ""}</span>`)}
+    ${tile("rosters", "rosters", "Rosters", `<span class="val">30 teams · ${Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0)} players</span>`)}
+    ${tile("schedule", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(teamShort(x.t))}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`, "list wide")}`;
+}
+
+const VIEWS = {home: renderHome, picks: null, live: () => { renderLive(); renderLastNight(); }, injuries: renderInjuries, form: renderForm, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
 let lastView = "rosters", prevHash = "";
-function closeNavPanels(){ $("#bsheet").hidden = true; $("#bmore").setAttribute("aria-expanded", "false"); }
-// on phones the content scrolls inside .wrap, elsewhere the window scrolls
-const toTop = () => { window.scrollTo(0, 0); $(".wrap").scrollTop = 0; };
-// size the phone app shell to the area the browser actually shows: iOS browsers' dvh can be shorter than it,
-// which left a strip under the tab bar
-const fitShell = () => { const h = window.visualViewport ? visualViewport.height : innerHeight; document.documentElement.style.setProperty("--apph", Math.round(h) + "px"); };
-fitShell(); window.visualViewport?.addEventListener("resize", fitShell); window.addEventListener("resize", fitShell);
+const toTop = () => window.scrollTo(0, 0);
 function showView(){
   let v = (location.hash || "").slice(1);
   if (v.startsWith("player-")) {
@@ -1428,15 +1475,14 @@ function showView(){
     if (state.gs.tab == null) state.gs.fromPid = back.startsWith("#player-") ? back.slice(8) : null;
     $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
     v = "game"; toTop();
-  } else if (!(v in VIEWS)) v = "injuries";
+  } else if (v === "lastnight") v = "live"; // old links
+  else if (!(v in VIEWS)) v = "home";
   if (v !== "player" && v !== "game") lastView = v;
   prevHash = location.hash;
   for (const k in VIEWS) $("#view-" + k).hidden = k !== v;
   document.documentElement.dataset.view = v;
   const tab = v === "player" || v === "game" ? lastView : v;
   document.querySelectorAll("a[data-view]").forEach(a => a.setAttribute("aria-current", a.dataset.view === tab ? "page" : "false"));
-  $("#bmore").setAttribute("aria-current", ["form", "schedule", "rosters"].includes(tab) ? "page" : "false");
-  closeNavPanels();
   if (VIEWS[v]) VIEWS[v]();
 }
 
@@ -1462,9 +1508,6 @@ function init(){
   $("#lvList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lvToggle(e); document.querySelector(`#lvList .lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
   $("#lvq").addEventListener("input", renderLive);
   $("#lvRefresh").addEventListener("click", refreshLive);
-  $("#bmore").addEventListener("click", e => { e.stopPropagation(); const open = $("#bsheet").hidden; $("#bsheet").hidden = !open; $("#bmore").setAttribute("aria-expanded", String(open)); });
-  document.addEventListener("click", e => { if (!e.target.closest("#bsheet")) closeNavPanels(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeNavPanels(); });
   try { $("#lvAuto").checked = localStorage.getItem("ttflLiveAuto") !== "0"; } catch (e) {}
   $("#lvAuto").addEventListener("input", e => { try { localStorage.setItem("ttflLiveAuto", e.target.checked ? "1" : "0"); } catch (x) {} });
   $("#lnList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lnToggle(e); document.querySelector(`.lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
