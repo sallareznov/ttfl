@@ -12,7 +12,7 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 :root{
   --bg:#f3f4f7; --surface:#ffffff; --ink:#151a24; --muted:#5d6577; --line:#dde1ea;
   --accent:#d4570f; --accent-soft:#fbe7da;
-  --ok:#1f7a4d; --ok-soft:#dcf1e6; --warn:#9a6400; --warn-soft:#fbefcf; --bad:#b3261e; --bad-soft:#f8dedc;
+  --ok:#1f7a4d; --ok-soft:#dcf1e6; --warn:#9a6400; --warn-soft:#fbefcf; --bad:#b3261e; --bad-soft:#f8dedc; --dbt:#c2410c; --dbt-soft:#fde3d2; --prob:#1d5fa8; --prob-soft:#dde9f8; --qs:#856a00; --qs-soft:#fbf2c2;
   --spark:#9aa3b5;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -20,12 +20,12 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
   --accent:#f07a35; --accent-soft:#3a2416;
-  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
+  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d; --dbt:#f5a066; --dbt-soft:#3d2616; --prob:#82b4ee; --prob-soft:#172a42; --qs:#ecd05a; --qs-soft:#38310f;
   --spark:#5d6577; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10131a; --surface:#181c25; --ink:#e9ecf2; --muted:#98a0b2; --line:#2a303d;
   --accent:#f07a35; --accent-soft:#3a2416;
-  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
+  --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d; --dbt:#f5a066; --dbt-soft:#3d2616; --prob:#82b4ee; --prob-soft:#172a42; --qs:#ecd05a; --qs-soft:#38310f;
   --spark:#5d6577; color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .wrap>*{min-width:0}
@@ -253,8 +253,10 @@ button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var
 .exp small{display:block;font-family:var(--body);font-size:.72rem;font-weight:500;color:var(--muted)}
 .pill{display:inline-block;font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:var(--ok)}
-.pill.q{background:var(--warn-soft);color:var(--warn)}
+.pill.q{background:var(--qs-soft);color:var(--qs)}
 .pill.out{background:var(--bad-soft);color:var(--bad)}
+.pill.dbt{background:var(--dbt-soft);color:var(--dbt)}
+.pill.prob{background:var(--prob-soft);color:var(--prob)}
 .form{font-size:.85rem;display:grid;gap:1px}
 .form b{font-weight:600}
 .up{color:var(--ok)} .down{color:var(--bad)}
@@ -545,7 +547,7 @@ details.method[open]>summary::after{content:" ▾"}
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
     <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
-    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
+    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable or day-to-day 55%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
   </details>
   </div>
 
@@ -631,16 +633,16 @@ function ttfl(r){
 const mean = (a, f) => a.length ? a.reduce((s, r) => s + f(r), 0) / a.length : null;
 
 function injuryInfo(inj){
-  if (!inj) return {label:"Available", cls:"ok", prob:1};
+  if (!inj) return {label:"Available", cls:"ok", tone:"ok", prob:1};
   const st = (inj.status || "").toLowerCase(), txt = (inj.short || "").toLowerCase();
-  if (st === "out") return {label:"Out", cls:"out", prob:0};
+  if (st === "out") return {label:"Out", cls:"out", tone:"out", prob:0};
   const m = txt.match(/\b(ruled out|won't play|will not play|out for|doubtful|questionable|probable|game-time decision)\b/);
   const w = m ? m[1] : st;
-  if (/ruled out|won't play|will not play|out for/.test(w)) return {label:"Out", cls:"out", prob:0};
-  if (w === "doubtful") return {label:"Doubtful", cls:"out", prob:.2};
-  if (w === "questionable" || w === "game-time decision") return {label:"Questionable", cls:"q", prob:.55};
-  if (w === "probable") return {label:"Probable", cls:"ok", prob:.95};
-  return {label:"Day-to-day", cls:"q", prob:.75};
+  if (/ruled out|won't play|will not play|out for/.test(w)) return {label:"Out", cls:"out", tone:"out", prob:0};
+  if (w === "doubtful") return {label:"Doubtful", cls:"out", tone:"dbt", prob:.2};
+  if (w === "questionable" || w === "game-time decision") return {label:"Questionable", cls:"q", tone:"q", prob:.55};
+  if (w === "probable") return {label:"Probable", cls:"ok", tone:"prob", prob:.95};
+  return {label:"Questionable", cls:"q", tone:"q", prob:.55};
 }
 
 function teamNumbers(abbr){
@@ -772,7 +774,7 @@ function render(){
     const open = state.open.has(p.id);
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
-        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.cls}">${r.inj.label}</span></div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
+        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.tone}">${r.inj.label}</span></div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
       <div class="expc"><div class="exp num">${b ? f1(Math.max(r.exp, 0)) : "–"}<small>${b ? "proj " + f1(r.proj) : "no NBA games"}</small></div></div>
       <div class="form num">${b ? `<span>Season <b>${f1(b.season)}</b> · L10 <b>${f1(b.l10)}</b> · L5 <b>${f1(b.l5)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
       <div class="sp">${b ? spark(b.L10.map(ttfl), b.season) : ""}</div>
@@ -829,7 +831,7 @@ const STATUS_ORDER = {out:0, q:1, ok:2};
 
 function injCard(i){
   const info = injuryInfo(i);
-  return `<details class="icard"><summary class="ihead"><span class="name">${esc(i.name)}</span><span class="pill ${info.cls}">${info.label}</span></summary>
+  return `<details class="icard"><summary class="ihead"><span class="name">${esc(i.name)}</span><span class="pill ${info.tone}">${info.label}</span></summary>
     <div class="idetail"><div class="small muted">${esc(i.pos || "")}${i.detail ? " · " + esc(i.detail) : ""}${i.ret ? " · back ~" + fmtDay(i.ret.slice(0, 10)) : ""}</div>
     ${i.short ? `<div class="small">${esc(i.short)}</div>` : ""}
     ${i.date ? `<div class="small muted">Updated ${fmtDay(i.date.slice(0, 10))}</div>` : ""}</div></details>`;
@@ -855,7 +857,7 @@ function renderInjuries(){
     if (others.length) html += `<h2>Teams not playing</h2><div class="lanes others">${others.map(t => teamLane(t, byTeam[t], "")).join("")}</div>`;
   }
   $("#injList").innerHTML = html || `<div class="empty">No injuries match.</div>`;
-  $("#injNote").textContent = `${list.length} players on ESPN's injury report across the league. "Day-to-day" players are labelled questionable, doubtful or probable when the latest news says so.`;
+  $("#injNote").textContent = `${list.length} players on ESPN's injury report across the league. "Day-to-day" players count as questionable, unless the latest news says doubtful or probable.`;
 }
 
 function renderForm(){
@@ -1078,7 +1080,7 @@ function renderRosters(){
       <div class="who2" style="min-width:0"><div class="name"><a class="plink" href="#player-${esc(p.id)}">${esc(p.name)}</a></div><div class="sub">${esc(p.pos || "")}${p.college ? " · " + esc(p.college) : ""}</div></div>
       <div class="c-age num">${p.age ?? ""}</div><div class="c-ht num">${esc(p.ht || "")}</div><div class="c-exp">${exp}</div>
       <div class="bio">${[p.age && p.age + " yrs", p.ht, exp].filter(Boolean).map(esc).join(" · ")}</div>
-      <div class="st">${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
+      <div class="st">${info ? `<span class="pill ${info.tone}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
       <div class="tt num">${p.avg != null ? `<b>${f1(p.avg)}</b><span>${p.gp} g</span>` : `<b class="muted">–</b>`}${p.prevAvg != null ? `<div class="small muted">${f1(p.prevAvg)} in ${esc(DATA.prevSeason)}</div>` : ""}</div></div>`;
   };
   // highest TTFL average first; players with no game this season follow, ranked by last season
@@ -1286,7 +1288,7 @@ function renderPlayer(){
   }).join("");
   const photo = (DATA.photos || {})[state.pid];
   el.innerHTML = `<div class="phead">${photo ? `<img class="pphoto" src="${photo}" alt="${esc(p.name)}" onerror="this.remove()">` : logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
-      ${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
+      ${info ? `<span class="pill ${info.tone}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
     ${inj && inj.short ? `<div class="notice small">${esc(inj.short)}</div>` : ""}
     <div class="ptiles four">${tile(p.avg != null ? f1(p.avg) : "–", `Avg ${DATA.season}${p.gp ? " · " + p.gp + " g" : ""}`)}${tile(l5.length ? f1(mean(l5, ttfl)) : "–", "Avg last 5")}${tile(p.prevAvg != null ? f1(p.prevAvg) : "–", `Avg ${DATA.prevSeason}${p.prevGp ? " · " + p.prevGp + " g" : ""}`)}${tile(log.length ? Math.max(...log.map(ttfl)) : "–", `Best, last ${log.length}`)}</div>
     <div class="seg ptabs tabs6" role="group" aria-label="Player stats">${[["log", "Game log"], ["avg", "Averages"], ["splits", "Splits"], ["shots", "Shot chart"], ["vsplayer", "VS player"], ["vsteam", "VS team"]].map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${ps.tab === k}">${l}</button>`).join("")}</div>
