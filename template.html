@@ -102,6 +102,7 @@ a.tileh .go{margin-left:auto;color:var(--muted);font-size:1.2rem;line-height:1}
 a.tileh .stat{margin-top:auto}
 a.tileh .stat>b{display:block;font-family:var(--display);font-size:2rem;font-weight:700;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
 a.tileh .val{display:block;font-size:.85rem;color:var(--muted);margin-top:3px}
+a.tileh .val.foot{margin-top:auto}
 a.tileh .val b{color:var(--ink);font-weight:600;white-space:nowrap}
 a.tileh .rows{display:grid;grid-template-columns:minmax(0,1fr);font-size:.95rem}
 a.tileh .rows div{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;padding:5px 0;border-top:1px solid var(--line)}
@@ -1432,7 +1433,7 @@ function renderHome(){
   const liveTop = live.doc && live.doc.games.some(g => g.state !== "pre") ? liveRows(live.doc).slice(0, 5) : [];
   const [west, east] = standings();
   $("#view-home").innerHTML = `
-    ${tile("picks", "tonight", "Tonight", stat(DATA.games.length, `game${DATA.games.length === 1 ? "" : "s"}${left ? "<br>" + left : ""}`))}
+    ${tile("picks", "tonight", "Tonight", DATA.games.length ? `<div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${left ? " · " + left : ""}</span>` : stat(0, "games"))}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
     ${tile("form", "form", "Averages", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
