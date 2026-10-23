@@ -80,8 +80,6 @@ nav.menu a:hover{color:var(--ink)}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-right:6px;vertical-align:middle;animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.dot{animation:none}}
-button.score{font:inherit;color:inherit;text-align:left;cursor:pointer}
-button.score[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .score .gst{font-size:.78rem;color:var(--muted)}
 .score .gst.on{color:var(--bad);font-weight:600}
 .lvtag{color:var(--bad);font-weight:600}
@@ -831,7 +829,7 @@ function scorecard(r, s, id, name, evo, photo, list){
 // The page reads ESPN's public scoreboard and box scores itself, so scores are as fresh as the last refresh.
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 const PAGES_URL = "https://sallareznov.github.io/ttfl/";
-const live = {doc:null, game:null, open:new Set(), busy:false, msg:"", started:false, last:0, nba:null};
+const live = {doc:null, open:new Set(), busy:false, msg:"", started:false, last:0, nba:null};
 const elapsedSecs = (period, clock) => {
   const v = String(clock || "0"); let left = 0;
   try { left = v.includes(":") ? +v.split(":")[0] * 60 + +v.split(":")[1] : +v; } catch (e) {}
@@ -930,14 +928,13 @@ function renderLive(){
   if (!d) { $("#lvScores").innerHTML = ""; $("#lvList").innerHTML = `<div class="empty">${live.busy ? "Loading live scores…" : "No live scores yet."}</div>`; return; }
   const day = d.date ? `${d.date.slice(0, 4)}-${d.date.slice(4, 6)}-${d.date.slice(6)}` : null;
   $("#lvTitle").textContent = "Live TTFL scores" + (day ? ", " + fmtLong(day) : "");
-  if (live.game && !d.games.some(g => g.id === live.game)) live.game = null;
   $("#lvScores").innerHTML = d.games.map(g => {
     const scored = g.state !== "pre" && g.homeScore != null, hw = +g.homeScore > +g.awayScore, done = g.state === "post";
     const st = g.state === "in" ? `<span class="gst on">Live · ${esc(g.detail || "")}</span>` : done ? `<span class="gst">Final</span>` : `<span class="gst">${esc(parisClock(new Date(g.start)))}</span>`;
-    return `<button type="button" class="score" data-g="${esc(g.id)}" aria-pressed="${live.game === g.id}"><div class="line ${done && hw ? "loss" : "win"}">${logoImg(g.away)}${esc(g.away)}${scored ? `<span class="pts">${esc(g.awayScore)}</span>` : ""}</div><div class="line ${done && !hw ? "loss" : "win"}">${logoImg(g.home)}${esc(g.home)}${scored ? `<span class="pts">${esc(g.homeScore)}</span>` : ""}</div>${st}</button>`;
+    return `<div class="score"><div class="line ${done && hw ? "loss" : "win"}">${logoImg(g.away)}${esc(g.away)}${scored ? `<span class="pts">${esc(g.awayScore)}</span>` : ""}</div><div class="line ${done && !hw ? "loss" : "win"}">${logoImg(g.home)}${esc(g.home)}${scored ? `<span class="pts">${esc(g.homeScore)}</span>` : ""}</div>${st}</div>`;
   }).join("") || `<div class="empty">No NBA games today.</div>`;
   const q = norm($("#lvq").value || "");
-  const rows = d.games.filter(g => !live.game || g.id === live.game).flatMap(g => g.players.map(p => {
+  const rows = d.games.flatMap(g => g.players.map(p => {
     const r = [day, ...p[4]];
     return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
   })).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q)).sort((a, b) => b.s - a.s);
@@ -1319,7 +1316,6 @@ function init(){
   const lvToggle = e => { const b = e.target.closest("[data-evo]"); if (b) { const id = b.dataset.evo; state.evoClosed.has(id) ? state.evoClosed.delete(id) : state.evoClosed.add(id); renderLive(); return; } const r = e.target.closest(".lnrow[data-id]"); if (!r) return; const id = r.dataset.id; live.open.has(id) ? live.open.delete(id) : live.open.add(id); renderLive(); };
   $("#lvList").addEventListener("click", lvToggle);
   $("#lvList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lvToggle(e); document.querySelector(`#lvList .lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
-  $("#lvScores").addEventListener("click", e => { const b = e.target.closest("[data-g]"); if (!b) return; live.game = live.game === b.dataset.g ? null : b.dataset.g; renderLive(); });
   $("#lvq").addEventListener("input", renderLive);
   $("#lvRefresh").addEventListener("click", refreshLive);
   try { $("#lvAuto").checked = localStorage.getItem("ttflLiveAuto") !== "0"; } catch (e) {}
