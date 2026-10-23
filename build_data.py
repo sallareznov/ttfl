@@ -522,13 +522,15 @@ def main():
     # where the NBA CDN refuses this machine, link the image instead: a normal browser loads it fine,
     # only claude.ai's sandbox needs the embedded copy
     photos = {pid: s or f"{HEADSHOT_URL}/{nid}.png" for (pid, nid), s in zip(pairs, shots) if s or nid}
+    # GitHub Pages can load the CDN images directly, so its page links them instead (render_page.py --standalone)
+    photo_links = {pid: f"{HEADSHOT_URL}/{nid}.png" for pid, nid in pairs if nid}
     print(f"headshots: {sum(1 for s in shots if s)} embedded, {sum(1 for (_, n), s in zip(pairs, shots) if n and not s)} linked, {sum(1 for _, n in pairs if not n)} unmatched", file=sys.stderr)
 
     logos = {}
     for abbr in sorted(set(all_teams.values())):
         logos[abbr] = {"light": logo(abbr, "L"), "dark": logo(abbr, "D")}
 
-    data = {"logos": logos, "photos": photos, "injuryList": injury_list, "recent": recent_players, "lastNight": last_night,
+    data = {"logos": logos, "photos": photos, "photoLinks": photo_links, "injuryList": injury_list, "recent": recent_players, "lastNight": last_night,
             "recentFrom": f"{days[-1][:4]}-{days[-1][4:6]}-{days[-1][6:]}", "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "date": day.isoformat(), "season": f"{cur_season-1}-{str(cur_season)[2:]}",
             "prevSeason": f"{prev_season-1}-{str(prev_season)[2:]}",

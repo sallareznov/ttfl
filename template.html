@@ -939,7 +939,7 @@ function scorecard(r, s, id, name, evo, photo, list){
   const plus = r[4] + r[5] + r[6] + r[7] + r[8] + r[9] + r[11] + r[13];
   const evoOpen = state.evoOpen.has(id);
   return `<div class="scard">
-    ${photo ? `<div class="top"><img class="photo" src="${photo}" alt="${esc(name)}"><div><div class="pname">${esc(name)}</div><div class="big num">${s} <small>TTFL</small></div></div></div>` : ""}
+    ${photo ? `<div class="top"><img class="photo" src="${photo}" alt="${esc(name)}" onerror="this.remove()"><div><div class="pname">${esc(name)}</div><div class="big num">${s} <small>TTFL</small></div></div></div>` : ""}
     ${evo ? `<button class="evo-h" type="button" data-evo="${esc(id)}" aria-expanded="${evoOpen}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/></svg><span class="t">Score evolution</span><svg class="chev2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>${evoOpen ? evoChart(evo, list) : ""}` : ""}
     <div class="tiles">${tile(r[4], "Pts")}${tile(r[5], "Reb")}${tile(r[6], "Ast")}${tile(r[7], "Stl")}${tile(r[8], "Blk")}${tile(r[15], "TO")}${tile(`${r[9]}/${r[10]}`, "FG")}${tile(`${r[11]}/${r[12]}`, "3PT")}${tile(`${r[13]}/${r[14]}`, "FT")}${tile(Math.round(r[3]), "Min")}</div>
     <div class="calc num"><span class="pos">+${plus} bonus</span><span class="neg">−${r[15]} turnovers</span><span class="neg">−${miss} missed shots</span><span><b>= ${s} TTFL</b></span></div>
@@ -1317,7 +1317,7 @@ function renderPlayer(){
     return `<tr class="${gid ? "go" : ""}" ${gid ? `data-gid="${gid}" title="Box score and play-by-play"` : ""}>${logCells(r)}</tr>`;
   }).join("");
   const photo = (DATA.photos || {})[state.pid];
-  el.innerHTML = `<div class="phead">${photo ? `<img class="pphoto" src="${photo}" alt="${esc(p.name)}">` : logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
+  el.innerHTML = `<div class="phead">${photo ? `<img class="pphoto" src="${photo}" alt="${esc(p.name)}" onerror="this.remove()">` : logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
       ${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
     ${inj && inj.short ? `<div class="notice small">${esc(inj.short)}</div>` : ""}
     <div class="ptiles four">${tile(p.avg != null ? f1(p.avg) : "–", `Avg ${DATA.season}${p.gp ? " · " + p.gp + " g" : ""}`)}${tile(l5.length ? f1(mean(l5, ttfl)) : "–", "Avg last 5")}${tile(p.prevAvg != null ? f1(p.prevAvg) : "–", `Avg ${DATA.prevSeason}${p.prevGp ? " · " + p.prevGp + " g" : ""}`)}${tile(log.length ? Math.max(...log.map(ttfl)) : "–", `Best, last ${log.length}`)}</div>
