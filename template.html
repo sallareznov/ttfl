@@ -115,8 +115,7 @@ a.tileh .rows div:first-child .n{color:var(--accent)}
 @media (min-width:641px){.home-link{display:none}}
 @media (max-width:640px){.home{gap:10px}a.tileh{min-height:118px;padding:10px 12px}a.tileh .lbl{font-size:1.05rem}a.tileh .stat>b{font-size:1.75rem}a.tileh .rows{font-size:.88rem}.stand{font-size:.86rem}}
 /* live page: no page title, compact deadline and controls */
-:root[data-view="live"] header>div:first-child,:root[data-view="live"] #lvTitle{display:none}
-:root[data-view="live"] header{justify-content:flex-end}
+:root[data-view="live"] #lvTitle{display:none}
 :root[data-view="live"] .hright{grid-auto-flow:column;align-items:center;gap:10px}
 :root[data-view="live"] .deadline{padding:6px 12px;gap:2px 10px}
 :root[data-view="live"] .deadline .dl-time{font-size:1.1rem}
@@ -530,7 +529,7 @@ details.method[open]>summary::after{content:" ▾"}
     <a href="#injuries" data-view="injuries">Injury report</a>
     <a href="#picks" data-view="picks">Tonight</a>
     <a href="#live" data-view="live">Live</a>
-    <a href="#form" data-view="form">In form</a>
+    <a href="#form" data-view="form">Averages</a>
     <a href="#schedule" data-view="schedule">Schedule</a>
     <a href="#rosters" data-view="rosters">Rosters</a>
   </nav>
@@ -574,7 +573,7 @@ details.method[open]>summary::after{content:" ▾"}
   <div class="view" id="view-form" hidden>
     <p class="muted" id="formIntro"></p>
     <div class="controls">
-      <input type="search" id="fq" placeholder="Search player or team" aria-label="Search in-form players">
+      <input type="search" id="fq" placeholder="Search player or team" aria-label="Search player averages">
       <label class="chk"><input type="checkbox" id="fNext"> Only players in the next games</label>
     </div>
     <div class="list" id="formList"></div>
@@ -900,7 +899,7 @@ function renderForm(){
   $("#formList").hidden = !Object.keys(rec).length;
   $("#formIntro").textContent = Object.keys(rec).length
     ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 2 games). Players in the next games show how that compares with their season average.`
-    : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Picks tab uses last season's form.`;
+    : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Tonight page uses last season's averages.`;
   $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + capped("form", rows, q).map((x, k) => {
     const diff = x.season != null ? x.avg - x.season : null;
     const trend = diff == null ? "" : `<span class="${diff >= 0 ? "up" : "down"}">${diff >= 0 ? "▲ +" : "▼ "}${f1(diff)} vs season</span>`;
