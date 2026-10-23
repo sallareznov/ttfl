@@ -772,7 +772,7 @@ function render(){
     const open = state.open.has(p.id);
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
-        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span>${r.inj.label !== "Available" ? `<span class="pill ${r.inj.cls}">${r.inj.label}</span>` : ""}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
+        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.cls}">${r.inj.label}</span></div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
       <div class="expc"><div class="exp num">${b ? f1(Math.max(r.exp, 0)) : "–"}<small>${b ? "proj " + f1(r.proj) : "no NBA games"}</small></div></div>
       <div class="form num">${b ? `<span>Season <b>${f1(b.season)}</b> · L10 <b>${f1(b.l10)}</b> · L5 <b>${f1(b.l5)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
       <div class="sp">${b ? spark(b.L10.map(ttfl), b.season) : ""}</div>
