@@ -388,6 +388,63 @@ table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
   .rrow>.c-age,.rrow>.c-ht,.rrow>.c-exp{display:none}
   .teamhead{flex-wrap:wrap}.teamhead .sub{margin-left:0;flex-basis:100%;text-align:left}
 }
+/* compact layout: keep scrolling short */
+.more-row{display:flex;justify-content:center;padding:10px}
+.daytabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.daytabs button{flex:0 0 auto;font:inherit;font-family:var(--display);font-weight:700;font-size:.95rem;letter-spacing:.03em;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:grid;justify-items:center;line-height:1.1}
+.daytabs button span{font-family:var(--body);font-weight:500;font-size:.72rem;color:var(--muted)}
+.daytabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.daytabs button[aria-pressed="true"] span{color:#fff}
+.more-row .ghost{font-weight:600;padding:7px 16px}
+details.method>summary{cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.1rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);list-style:none}
+details.method>summary::-webkit-details-marker{display:none}
+details.method>summary::after{content:" ▸";color:var(--muted)}
+details.method[open]>summary::after{content:" ▾"}
+.scores{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.scores>*{flex:0 0 auto}
+@media (max-width:640px){
+  .wrap{gap:12px;padding-block:10px 28px}
+  .view{gap:12px}
+  .view h2{margin-bottom:-4px;font-size:1.15rem}
+  h1{font-size:1.35rem;line-height:1.1}
+  .eyebrow{font-size:.75rem}
+  header{gap:4px 12px}
+  #fresh .fnote{display:none}
+  .row.item[aria-expanded="false"]>.st:has(.pill.ok){display:none}
+  .row.item[aria-expanded="false"]{grid-template-areas:"r who exp"}
+  .row.item[aria-expanded="false"]>.st{grid-area:auto;grid-column:2/-1;justify-self:start}
+  .game .teams{font-size:1rem;gap:6px}
+  .game .teams .logo{width:22px;height:22px}
+  .game .meta{font-size:.75rem}
+  .controls input[type=search]{flex:1 1 160px}
+  .sday h2{font-size:1rem}
+  .hright{grid-auto-flow:column;align-items:center;gap:10px}
+  .hright .ghost{padding:2px 8px;font-size:.78rem;white-space:nowrap}
+  .deadline{padding:8px 12px;gap:2px 10px}
+  .deadline .dl-time{font-size:1.25rem}
+  .deadline .dl-left{font-size:1rem}
+  .deadline .dl-note{display:none}
+  nav.menu a{padding:6px 9px;font-size:.95rem}
+  .controls{gap:8px 12px}
+  .game{min-width:150px;padding:6px 10px}
+  .game .teams{font-size:1.1rem}
+  .row{padding:8px 10px;row-gap:4px}
+  .row.item[aria-expanded="false"]>.form,.row.item[aria-expanded="false"]>.sp,.row.item[aria-expanded="false"]>.chips{display:none}
+  .row .who .logo{width:30px;height:30px}
+  .exp{font-size:1.4rem}
+  .lrow{padding:8px 10px;gap:8px}
+  .who .logo{width:30px;height:30px}
+  .score{padding:6px 10px}
+  .score .line{font-size:1rem}
+  .sched{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sgame{padding:8px;font-size:.9rem}
+  .sgame .line{font-size:1rem}
+  .sgame .line .rec{display:none}
+  .sgame .meta span+span{display:none}
+  .sday{gap:6px}
+  .tpick{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}
+  .tpick button{flex:0 0 52px}
+}
 </style>
 
 <div class="wrap">
@@ -424,13 +481,13 @@ table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
     <div id="rows"></div>
   </section>
 
-  <section class="method">
-    <h2>How the ranking works</h2>
+  <details class="method">
+    <summary>How the ranking works</summary>
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
     <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
     <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
-  </section>
+  </details>
   </div>
 
   <div class="view" id="view-injuries" hidden>
@@ -474,6 +531,7 @@ table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
       <select id="sTeam" aria-label="Filter by team"><option value="">All teams</option></select>
       <span class="small muted" id="sNote"></span>
     </div>
+    <div class="daytabs" id="sDays" role="group" aria-label="Days"></div>
     <div class="injwrap" id="schedList"></div>
   </div>
 
@@ -504,6 +562,10 @@ try { theme = localStorage.getItem("ttflTheme") === "dark" ? "dark" : "light"; }
 function applyTheme(){ document.documentElement.dataset.theme = theme; const b = document.getElementById("themeBtn"); if (b) b.textContent = theme === "dark" ? "Light mode" : "Dark mode"; }
 applyTheme();
 const DATA = /*__DATA__*/null;
+// long lists show their top rows first; "Show all" expands them (search always shows everything)
+const LIMIT = 20, shown = {};
+const capped = (key, arr, q) => q || shown[key] ? arr : arr.slice(0, LIMIT);
+const moreRow = (key, arr, q) => !q && !shown[key] && arr.length > LIMIT ? `<div class="more-row"><button type="button" class="ghost" data-more="${key}">Show all ${arr.length}</button></div>` : "";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const state = {game:null, open:new Set(), lnOpen:new Set(), evoClosed:new Set()};
@@ -648,7 +710,7 @@ function render(){
     return true;
   }).sort((a, b) => b.exp - a.exp || (b.b ? 1 : 0) - (a.b ? 1 : 0));
   let rank = 0;
-  $("#rows").innerHTML = rows.length ? rows.map(r => {
+  const html = rows.map(r => {
     const p = r.p, b = r.b;
     if (r.inj.prob > 0 && b) rank++;
     const shownRank = (r.inj.prob > 0 && b) ? rank : "";
@@ -669,7 +731,8 @@ function render(){
       <div class="chips">${chips}${vsLine(r)}</div>
       ${open ? detail(r) : ""}
     </div>`;
-  }).join("") : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
+  });
+  $("#rows").innerHTML = rows.length ? capped("picks", html, q).join("") + moreRow("picks", html, q) : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
 }
 
 function renderSlate(){
@@ -772,14 +835,14 @@ function renderForm(){
   $("#formIntro").textContent = Object.keys(rec).length
     ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 2 games). Players in the next games show how that compares with their season average.`
     : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Picks tab uses last season's form.`;
-  $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + rows.map((x, k) => {
+  $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + capped("form", rows, q).map((x, k) => {
     const diff = x.season != null ? x.avg - x.season : null;
     const trend = diff == null ? "" : `<span class="${diff >= 0 ? "up" : "down"}">${diff >= 0 ? "▲ +" : "▼ "}${f1(diff)} vs season</span>`;
     return `<div class="lrow"><div class="rank num">${k + 1}</div>
       <div class="who">${logoImg(x.e.team)}<div style="min-width:0"><div class="name">${esc(x.e.name)}</div><div class="sub">${esc(x.e.team)} · ${x.n} games · ${Math.round(x.min)} min${x.plays ? ` · <b>plays next</b>` : ""}</div></div></div>
       <div><div class="big num">${f1(x.avg)}</div><div class="small muted">best ${x.best}</div></div>
       <div class="small"><div>${spark(x.e.rows.slice(0, 10).map(ttfl), x.avg)}</div>${trend}</div></div>`;
-  }).join("") : (Object.keys(rec).length ? `<div class="empty">No players match.</div>` : "");
+  }).join("") + moreRow("form", rows, q) : (Object.keys(rec).length ? `<div class="empty">No players match.</div>` : "");
 }
 
 function renderLastNight(){
@@ -792,7 +855,7 @@ function renderLastNight(){
     return `<${tag} class="score ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}><div class="line ${hw ? "loss" : "win"}">${logoImg(g.away)}${esc(g.away)}<span class="pts">${esc(g.awayScore)}</span></div><div class="line ${hw ? "win" : "loss"}">${logoImg(g.home)}${esc(g.home)}<span class="pts">${esc(g.homeScore)}</span></div>${open ? `<span class="more">Box score →</span>` : ""}</${tag}>`;
   }).join("");
   const rows = Object.entries(DATA.recent || {}).flatMap(([id, e]) => e.rows.filter(r => r[0] === ln.date).map(r => ({id, e, r, s: ttfl(r)}))).sort((a, b) => b.s - a.s);
-  $("#lnList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + rows.map((x, k) => {
+  $("#lnList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + capped("lastnight", rows).map((x, k) => {
     const open = state.lnOpen.has(x.id);
     return `<div class="lrow lnrow" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
     <div class="rank num">${k + 1}</div>
@@ -800,7 +863,7 @@ function renderLastNight(){
     <div class="big num">${x.s}</div>
     <div class="chev" aria-hidden="true">▸</div>
     ${open ? scorecard(x.r, x.s, x.id, x.e.name, (ln.evo || {})[x.id], (ln.photos || {})[x.id], $("#lnList")) : ""}</div>`;
-  }).join("") : `<div class="empty">No box scores yet.</div>`;
+  }).join("") + moreRow("lastnight", rows) : `<div class="empty">No box scores yet.</div>`;
 }
 
 function evoChart(pts, list){
@@ -947,7 +1010,7 @@ function renderLive(){
     return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
   })).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q)).sort((a, b) => b.s - a.s);
   const started = d.games.some(g => g.state !== "pre");
-  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + rows.map((x, k) => {
+  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + capped("live", rows, q).map((x, k) => {
     const open = live.open.has(x.id);
     return `<div class="lrow lnrow" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
     <div class="rank num">${k + 1}</div>
@@ -955,7 +1018,7 @@ function renderLive(){
     <div class="big num">${x.s}</div>
     <div class="chev" aria-hidden="true">▸</div>
     ${open ? scorecard(x.r, x.s, x.id, x.name, x.evo, null, $("#lvList")) : ""}</div>`;
-  }).join("") : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
+  }).join("") + moreRow("live", rows, q) : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
 }
 
 // ---- schedule ----
@@ -971,7 +1034,10 @@ function schedGame(g){
 function renderSchedule(){
   const team = $("#sTeam").value, days = DATA.schedule || [];
   let total = 0;
-  const html = days.map(d => {
+  if (!state.sday || !days.some(d => d.date === state.sday)) state.sday = (days.find(d => d.date === DATA.date) || days.find(d => d.games.length) || days[0] || {}).date;
+  $("#sDays").hidden = !!team;
+  $("#sDays").innerHTML = days.map(d => `<button type="button" data-sday="${esc(d.date)}" aria-pressed="${state.sday === d.date}">${esc(new Date(d.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"}))}<span>${d.games.length || "–"}</span></button>`).join("");
+  const html = days.filter(d => team || d.date === state.sday).map(d => {
     const gs = d.games.filter(g => !team || g.home === team || g.away === team).sort((a, b) => a.time < b.time ? -1 : 1);
     total += gs.length;
     if (!gs.length) return team ? "" : `<section class="sday"><h2>${fmtLong(d.date)} <span class="small muted">No games</span></h2></section>`;
@@ -1307,6 +1373,7 @@ function showView(){
 }
 
 function init(){
+  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({picks: render, form: renderForm, lastnight: renderLastNight, live: renderLive})[b.dataset.more]?.(); });
   applyTheme();
   $("#themeBtn").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; try { localStorage.setItem("ttflTheme", theme); } catch (e) {} applyTheme(); });
   if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
@@ -1315,7 +1382,7 @@ function init(){
   $("#eyebrow").textContent = `TTFL · ${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}`;
   $("#h1").textContent = "Picks for the night of " + d.toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long"});
   const gen = new Date(DATA.generated);
-  $("#fresh").innerHTML = `<b>Updated ${esc(gen.toLocaleString(undefined, {timeZone: TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}))}</b><br>Refreshes every hour · all times are Paris time`;
+  $("#fresh").innerHTML = `<b>Updated ${esc(gen.toLocaleString(undefined, {timeZone: TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}))}</b><span class="fnote"><br>Refreshes every hour · all times are Paris time</span>`;
   const anyCur = DATA.players.some(p => p.cur.length);
   if (!anyCur) { const n = $("#notice"); n.hidden = false; n.textContent = `No ${DATA.season} games have been played yet, so form comes from the ${DATA.prevSeason} season and each player's last 10 games (playoffs included). Rosters and injuries are current.`; }
   renderSlate(); render();
@@ -1337,6 +1404,7 @@ function init(){
   const tn = DATA.teamNames || {};
   $("#sTeam").insertAdjacentHTML("beforeend", Object.keys(DATA.rosters || tn).sort().map(t => `<option value="${esc(t)}">${esc(tn[t] || t)}</option>`).join(""));
   $("#sTeam").addEventListener("input", renderSchedule);
+  $("#sDays").addEventListener("click", e => { const b = e.target.closest("[data-sday]"); if (!b) return; state.sday = b.dataset.sday; renderSchedule(); });
   $("#rq").addEventListener("input", renderRosters);
   $("#rosterList").addEventListener("click", e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-pid]"); if (r) location.hash = "player-" + r.dataset.pid; });
   $("#playerBody").addEventListener("click", onPlayerClick);
