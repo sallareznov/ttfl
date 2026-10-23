@@ -90,8 +90,8 @@ button.btn:disabled{opacity:.55;cursor:default}
 .bnav,.bsheet{display:none}
 @media (max-width:640px){
   nav.menu{display:none}
-  html,body{height:100%;overflow:hidden}
-  body{display:flex;flex-direction:column;height:100dvh}
+  html,body{height:var(--apph,100dvh);overflow:hidden}
+  body{display:flex;flex-direction:column}
   .wrap{flex:1 1 auto;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
   .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:0 0 auto;position:relative;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
   .bnav a,.bnav button{display:grid;justify-items:center;gap:2px;padding:5px 0 3px;font:inherit;font-size:.68rem;font-weight:600;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
@@ -1410,6 +1410,10 @@ let lastView = "rosters", prevHash = "";
 function closeNavPanels(){ $("#bsheet").hidden = true; $("#bmore").setAttribute("aria-expanded", "false"); }
 // on phones the content scrolls inside .wrap, elsewhere the window scrolls
 const toTop = () => { window.scrollTo(0, 0); $(".wrap").scrollTop = 0; };
+// size the phone app shell to the area the browser actually shows: iOS browsers' dvh can be shorter than it,
+// which left a strip under the tab bar
+const fitShell = () => { const h = window.visualViewport ? visualViewport.height : innerHeight; document.documentElement.style.setProperty("--apph", Math.round(h) + "px"); };
+fitShell(); window.visualViewport?.addEventListener("resize", fitShell); window.addEventListener("resize", fitShell);
 function showView(){
   let v = (location.hash || "").slice(1);
   if (v.startsWith("player-")) {
