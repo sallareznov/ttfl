@@ -886,8 +886,8 @@ function renderForm(){
   rows.sort((a, b) => b.avg - a.avg);
   rows = rows.slice(0, 60);
   $("#formList").hidden = !Object.keys(rec).length;
-  $("#formIntro").textContent = Object.keys(rec).length
-    ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 1 game). Players in the next games show how that compares with their season average.`
+  $("#formIntro").hidden = !!Object.keys(rec).length;
+  $("#formIntro").textContent = Object.keys(rec).length ? ""
     : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Tonight page uses last season's averages.`;
   $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + capped("form", rows, q).map((x, k) => {
     const diff = x.season != null ? x.avg - x.season : null;
