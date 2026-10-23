@@ -92,7 +92,7 @@ button.btn:disabled{opacity:.55;cursor:default}
   nav.menu{display:none}
   html,body{height:100%;overflow:hidden}
   body{display:flex;flex-direction:column;height:100dvh}
-  .wrap{flex:1 1 auto;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .wrap{flex:1 1 auto;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}
   .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:0 0 auto;position:relative;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
   .bnav a,.bnav button{display:grid;justify-items:center;gap:2px;padding:5px 0 3px;font:inherit;font-size:.68rem;font-weight:600;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
   .bnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -321,6 +321,7 @@ a.plink:hover{text-decoration:underline}
 .phead .logo,.phead .badge{width:56px;height:56px}
 .phead h2{font-size:1.9rem;text-transform:none;letter-spacing:.01em;margin:0}
 .phead .sub{color:var(--muted);font-size:.92rem}
+.phead .pphoto{width:96px;height:70px;object-fit:cover;object-position:top;border-radius:8px;background:var(--surface);border:1px solid var(--line);flex:0 0 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px;min-width:0}
 .card h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em}
 .card .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
@@ -925,7 +926,7 @@ function renderLastNight(){
     <div class="who">${logoImg(x.e.team)}<div style="min-width:0"><div class="name">${esc(x.e.name)}</div><div class="sub">${esc(x.e.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])}</div></div></div>
     <div class="big num">${x.s}</div>
     <div class="chev" aria-hidden="true">▸</div>
-    ${open ? scorecard(x.r, x.s, x.id, x.e.name, (ln.evo || {})[x.id], (ln.photos || {})[x.id], $("#lnList")) : ""}</div>`;
+    ${open ? scorecard(x.r, x.s, x.id, x.e.name, (ln.evo || {})[x.id], (DATA.photos || {})[x.id], $("#lnList")) : ""}</div>`;
   }).join("") + moreRow("lastnight", rows) : `<div class="empty">No box scores yet.</div>`;
 }
 
@@ -1325,7 +1326,8 @@ function renderPlayer(){
     const gid = gameIdFor(r[0], r[1]);
     return `<tr class="${gid ? "go" : ""}" ${gid ? `data-gid="${gid}" title="Box score and play-by-play"` : ""}>${logCells(r)}</tr>`;
   }).join("");
-  el.innerHTML = `<div class="phead">${logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
+  const photo = (DATA.photos || {})[state.pid];
+  el.innerHTML = `<div class="phead">${photo ? `<img class="pphoto" src="${photo}" alt="${esc(p.name)}">` : logoImg(team)}<div><h2>${esc(p.name)}</h2><div class="sub">${esc(names[team] || team)} · ${esc(p.pos || "")}${p.jersey ? " · #" + esc(p.jersey) : ""}${p.age ? " · " + p.age + " yrs" : ""}${p.ht ? " · " + esc(p.ht) : ""}${exp ? " · " + exp : ""}</div></div>
       ${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
     ${inj && inj.short ? `<div class="notice small">${esc(inj.short)}</div>` : ""}
     <div class="ptiles four">${tile(p.avg != null ? f1(p.avg) : "–", `Avg ${DATA.season}${p.gp ? " · " + p.gp + " g" : ""}`)}${tile(l5.length ? f1(mean(l5, ttfl)) : "–", "Avg last 5")}${tile(p.prevAvg != null ? f1(p.prevAvg) : "–", `Avg ${DATA.prevSeason}${p.prevGp ? " · " + p.prevGp + " g" : ""}`)}${tile(log.length ? Math.max(...log.map(ttfl)) : "–", `Best, last ${log.length}`)}</div>

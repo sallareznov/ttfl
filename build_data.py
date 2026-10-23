@@ -509,22 +509,26 @@ def main():
     last_day = next((d for d in days if games_by_day[d]), None)
     last_night = {"date": f"{last_day[:4]}-{last_day[4:6]}-{last_day[6:]}", "games": games_by_day[last_day]} if last_day else None
     if last_night:
-        # Score evolution and headshots for last night's players only (keeps the page small)
+        # Score evolution for last night's players only (keeps the page small)
         ln_ids = {pid: e["name"] for pid, e in recent_players.items() if any(r[0] == last_night["date"] for r in e["rows"])}
         last_night["evo"] = {pid: evos[(pid, last_night["date"])] for pid in ln_ids if (pid, last_night["date"]) in evos}
-        nba_ids = nba_person_ids()
-        pairs = [(pid, nba_ids.get(name_key(n))) for pid, n in ln_ids.items()]
-        shots = pmap(lambda x: headshot(x[1]) if x[1] else None, pairs)
-        # where the NBA CDN refuses this machine (it blocks some cloud hosts, e.g. GitHub's runners), link the
-        # image instead: a normal browser loads it fine, only claude.ai's sandbox needs the embedded copy
-        last_night["photos"] = {pid: s or f"{HEADSHOT_URL}/{nid}.png" for (pid, nid), s in zip(pairs, shots) if s or nid}
-        print(f"headshots: {sum(1 for s in shots if s)} embedded, {sum(1 for (_, n), s in zip(pairs, shots) if n and not s)} linked", file=sys.stderr)
+
+    # Headshots for every rostered player and last night's players (player pages and last night's cards)
+    who = {p["id"]: p["name"] for r in rosters.values() for p in r["players"]}
+    if last_night: who.update({pid: e["name"] for pid, e in recent_players.items() if any(r[0] == last_night["date"] for r in e["rows"])})
+    nba_ids = nba_person_ids()
+    pairs = [(pid, nba_ids.get(name_key(n))) for pid, n in who.items()]
+    shots = pmap(lambda x: headshot(x[1]) if x[1] else None, pairs)
+    # where the NBA CDN refuses this machine, link the image instead: a normal browser loads it fine,
+    # only claude.ai's sandbox needs the embedded copy
+    photos = {pid: s or f"{HEADSHOT_URL}/{nid}.png" for (pid, nid), s in zip(pairs, shots) if s or nid}
+    print(f"headshots: {sum(1 for s in shots if s)} embedded, {sum(1 for (_, n), s in zip(pairs, shots) if n and not s)} linked, {sum(1 for _, n in pairs if not n)} unmatched", file=sys.stderr)
 
     logos = {}
     for abbr in sorted(set(all_teams.values())):
         logos[abbr] = {"light": logo(abbr, "L"), "dark": logo(abbr, "D")}
 
-    data = {"logos": logos, "injuryList": injury_list, "recent": recent_players, "lastNight": last_night,
+    data = {"logos": logos, "photos": photos, "injuryList": injury_list, "recent": recent_players, "lastNight": last_night,
             "recentFrom": f"{days[-1][:4]}-{days[-1][4:6]}-{days[-1][6:]}", "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "date": day.isoformat(), "season": f"{cur_season-1}-{str(cur_season)[2:]}",
             "prevSeason": f"{prev_season-1}-{str(prev_season)[2:]}",
