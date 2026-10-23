@@ -842,7 +842,7 @@ function render(){
 
 // ---- best pick + use-tonight-or-wait ----
 // future games: same form, season-scoring matchup, home/away and back-to-back (no odds or injury news yet)
-function upcoming(r, n = 4){
+function upcoming(r, n = 99){
   const t = r.p.team, me = teamNumbers(t), out = [], days = DATA.schedule || [];
   if (!me || !r.b) return out;
   for (const d of days) {
@@ -867,7 +867,7 @@ function renderBest(rows){
   const b = top[0];
   const verdict = r => {
     const up = upcoming(r), best = up.reduce((m, x) => !m || x.proj > m.proj ? x : m, null);
-    if (best && best.proj - r.proj >= 2) return `<span class="vd wait">Wait</span><span class="muted"><b>${f1(best.proj)}</b> ${vs(best)} ${wd(best.date)}</span>`;
+    if (best && best.proj - r.proj >= 1) return `<span class="vd wait">Wait</span><span class="muted"><b>${f1(best.proj)}</b> ${vs(best)} ${wd(best.date)}</span>`;
     return `<span class="vd use">Use tonight</span><span class="muted">${best ? `next best ${f1(best.proj)} ${vs(best)} ${wd(best.date)}` : "no later games yet"}</span>`;
   };
   el.hidden = false;
@@ -877,7 +877,7 @@ function renderBest(rows){
       <div class="exp num">${f1(Math.max(b.exp, 0))}<small>projected</small></div></a>
     <div class="bnext">Next best: ${top.slice(1, 3).map(r => `<a href="#player-${esc(r.p.id)}">${esc(r.p.name)}</a> ${f1(Math.max(r.exp, 0))}`).join(" · ")}</div>
     <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><span>${verdict(r)}</span></div>`).join("")}
-    <p class="small muted">Compares tonight's projection with his next 4 games. Later games use season scoring only (no betting lines or injury news yet), so "Wait" needs a game at least 2 TTFL points better.</p></div>`;
+    <p class="small muted">Compares tonight's projection with all his games in the next two weeks. "Wait" means a later game projects at least 1 TTFL point more. Later games use season scoring only (no betting lines or injury news yet).</p></div>`;
 }
 
 function renderSlate(){
