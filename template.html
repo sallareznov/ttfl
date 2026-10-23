@@ -84,6 +84,24 @@ nav.menu a:hover{color:var(--ink)}
 .score .gst.on{color:var(--bad);font-weight:600}
 .lvtag{color:var(--bad);font-weight:600}
 button.btn:disabled{opacity:.55;cursor:default}
+/* live list: recap style, name + status + logo + score box */
+.lrow.lvrow{grid-template-columns:minmax(0,1fr) auto 36px 64px;grid-template-areas:none;gap:12px;padding:10px 14px}
+.lrow.lvrow>*{grid-area:auto!important}
+.lrow.lvrow.head{display:grid;padding-block:8px}
+.lrow.lvrow.head>:last-child{text-align:center}
+.lvrow .name{font-weight:500;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvrow.top .name{color:var(--accent)}
+.lvrow .sub{font-size:.78rem;color:var(--muted)}
+.lvrow .gs{font-size:.8rem;color:var(--muted);text-align:right;white-space:nowrap}
+.lvrow .gs.on{color:var(--bad);font-weight:600}
+.lvrow .tl{display:grid;place-items:center}
+.lvrow .logo,.lvrow .badge{width:32px;height:32px}
+.sbox{display:grid;place-items:center;height:38px;border-radius:7px;font-family:var(--display);font-weight:700;font-size:1.4rem;font-variant-numeric:tabular-nums;color:#fff;background:#b4b9c3}
+.sbox.t1{background:var(--ink);color:var(--bg)}
+.sbox.t2{background:#6e7480}
+.sbox.t3{background:#9aa0ab}
+.lvrow .scard{grid-column:1/-1!important}
+@media (max-width:640px){.lrow.lvrow{grid-template-columns:minmax(0,1fr) auto 28px 54px;gap:8px;padding:9px 10px}.lvrow .logo,.lvrow .badge{width:26px;height:26px}.sbox{height:34px;font-size:1.25rem}.lvrow .name{font-size:.98rem}}
 .scard{grid-column:1/-1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px}
 .scard .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
 .scard .tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}
@@ -1010,13 +1028,14 @@ function renderLive(){
     return {id: p[0], name: p[1], team: p[2], g, r, s: ttfl(r), evo: p[5]};
   })).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q)).sort((a, b) => b.s - a.s);
   const started = d.games.some(g => g.state !== "pre");
-  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lnrow"><div>#</div><div>Player</div><div>TTFL</div><div></div></div>` + capped("live", rows, q).map((x, k) => {
-    const open = live.open.has(x.id);
-    return `<div class="lrow lnrow" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
-    <div class="rank num">${k + 1}</div>
-    <div class="who">${logoImg(x.team)}<div style="min-width:0"><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])} · ${Math.round(x.r[3])} min${x.g.state === "in" ? ` · <span class="lvtag">Live</span>` : ""}</div></div></div>
-    <div class="big num">${x.s}</div>
-    <div class="chev" aria-hidden="true">▸</div>
+  const tier = s => s >= 30 ? "t2" : s >= 20 ? "t3" : "";
+  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("live", rows, q).map((x, k) => {
+    const open = live.open.has(x.id), g = x.g;
+    const gs = g.state === "in" ? `<span class="gs on">${esc(g.detail || "Live")}</span>` : g.state === "post" ? `<span class="gs">Final</span>` : `<span class="gs"></span>`;
+    return `<div class="lrow lnrow lvrow${k === 0 && !q ? " top" : ""}" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
+    <div style="min-width:0"><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])} · ${Math.round(x.r[3])} min</div></div>
+    ${gs}<div class="tl">${logoImg(x.team)}</div>
+    <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div>
     ${open ? scorecard(x.r, x.s, x.id, x.name, x.evo, null, $("#lvList")) : ""}</div>`;
   }).join("") + moreRow("live", rows, q) : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
 }
