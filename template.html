@@ -587,7 +587,7 @@ details.method[open]>summary::after{content:" ▾"}
   <div class="view" id="view-tonight" hidden>
   <div class="notice" id="notice" hidden></div>
   <section aria-label="Tonight's games"><div class="slate" id="slate"></div></section>
-  <section class="best" id="best" aria-label="Best pick" hidden></section>
+  <section class="best" id="best" aria-label="Highest projected pick" hidden></section>
 
 
   <div class="controls">
@@ -893,7 +893,7 @@ function renderBest(rows){
     return `<span class="vd use">Use tonight</span><span class="muted">${best ? `next best ${f1(best.proj)} ${vs(best)} ${wd(best.date)}` : "no later games yet"}</span>`;
   };
   el.hidden = false;
-  el.innerHTML = `<div class="bhead"><span class="lbl">Best pick tonight</span></div>
+  el.innerHTML = `<div class="bhead"><span class="lbl">Highest projected pick tonight</span></div>
     <a class="bmain" href="#player-${esc(b.p.id)}">${logoImg(b.p.team)}<div style="min-width:0"><div class="nmrow"><span class="name">${esc(b.p.name)}</span><span class="pill ${b.inj.tone}">${b.inj.label}</span></div>
       <div class="sub">${esc(b.p.team)} ${b.home ? "vs" : "@"} ${esc(b.opp)} · ${b.b.n5 && b.b.n5 < 5 ? `L${b.b.n5}` : "L5"} ${f1(b.b.cur5)}${b.factors.filter(x => Math.abs(x.pts) >= .05).map(x => ` · ${esc(x.label)} ${pts(x.pts)}`).join("")}</div></div>
       <div class="exp num">${f1(Math.max(b.exp, 0))}<small>projected</small></div></a>
@@ -1605,7 +1605,7 @@ function renderHome(){
   const [west, east] = standings();
   const best = DATA.games.length ? bestTop(projectAll(), 5) : [];
   const gamesHtml = `<div><div class="bh">Games</div><div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div></div>`;
-  const bestHtml = best.length ? `<div><div class="bh">Best pick</div><div class="rows">${best.map(r => `<div><span class="bn"><i>${esc(initialName(r.p.name))}</i><span class="opp">${r.home ? "vs" : "@"} ${esc(r.opp)}</span></span><span class="n">${f1(Math.max(r.exp, 0))}</span></div>`).join("")}</div></div>` : "";
+  const bestHtml = best.length ? `<div><div class="bh">Highest projected pick</div><div class="rows">${best.map(r => `<div><span class="bn"><i>${esc(initialName(r.p.name))}</i><span class="opp">${r.home ? "vs" : "@"} ${esc(r.opp)}</span></span><span class="n">${f1(Math.max(r.exp, 0))}</span></div>`).join("")}</div></div>` : "";
   $("#view-home").innerHTML = `
     ${tile("tonight", "tonight", "Tonight", DATA.games.length ? `<div class="tonh">${gamesHtml}${bestHtml}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${best.length ? " · projected TTFL score" : ""}</span>` : stat(0, "games"), "wide")}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
