@@ -298,10 +298,12 @@ def name_key(n):  # "Jaren Jackson Jr." / "Nikola Jokić" -> "jaren jackson" / "
     n = re.sub(r"\b(jr|sr|ii|iii|iv)\b", "", n)
     return " ".join(re.sub(r"[^a-z ]", "", n).split())
 
+HEADSHOT_URL = "https://cdn.nba.com/headshots/nba/latest/260x190"
+
 def headshot(pid):
     """Small NBA.com headshot as a data URI (WebP when Pillow is available)."""
     try:
-        req = urllib.request.Request(f"https://cdn.nba.com/headshots/nba/latest/260x190/{pid}.png", headers={"User-Agent": "Mozilla/5.0"})
+        req = urllib.request.Request(f"{HEADSHOT_URL}/{pid}.png", headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=30) as r: png = r.read()
     except Exception:
         return None
@@ -345,6 +347,7 @@ def schedule_day(date):
                     "awayScore": a.get("score") if st.get("state") != "pre" else None,
                     "homeRec": rec(h), "awayRec": rec(a), "tv": tv,
                     "venue": (c.get("venue") or {}).get("fullName"),
+                    "odds": ((c.get("odds") or [{}])[0]).get("details"),
                     "type": (ev.get("season") or {}).get("type")})
     return out
 
@@ -368,9 +371,15 @@ def main():
         c = ev["competitions"][0]
         h = next(x for x in c["competitors"] if x["homeAway"] == "home")
         a = next(x for x in c["competitors"] if x["homeAway"] == "away")
+        odds = (c.get("odds") or [{}])[0]
+        fav = None
+        if odds.get("homeTeamOdds", {}).get("favorite"): fav = h["team"]["abbreviation"]
+        elif odds.get("awayTeamOdds", {}).get("favorite"): fav = a["team"]["abbreviation"]
         g = {"id": ev["id"], "time": ev["date"], "status": c["status"]["type"]["name"],
              "home": h["team"]["abbreviation"], "away": a["team"]["abbreviation"],
-             "homeId": h["team"]["id"], "awayId": a["team"]["id"]}
+             "homeId": h["team"]["id"], "awayId": a["team"]["id"],
+             "overUnder": odds.get("overUnder"), "spread": abs(odds["spread"]) if odds.get("spread") is not None else None,
+             "favorite": fav, "oddsText": odds.get("details")}
         games.append(g)
         teams_tonight[g["homeId"]] = g["home"]; teams_tonight[g["awayId"]] = g["away"]
 
@@ -506,7 +515,10 @@ def main():
         nba_ids = nba_person_ids()
         pairs = [(pid, nba_ids.get(name_key(n))) for pid, n in ln_ids.items()]
         shots = pmap(lambda x: headshot(x[1]) if x[1] else None, pairs)
-        last_night["photos"] = {pid: s for (pid, _), s in zip(pairs, shots) if s}
+        # where the NBA CDN refuses this machine (it blocks some cloud hosts, e.g. GitHub's runners), link the
+        # image instead: a normal browser loads it fine, only claude.ai's sandbox needs the embedded copy
+        last_night["photos"] = {pid: s or f"{HEADSHOT_URL}/{nid}.png" for (pid, nid), s in zip(pairs, shots) if s or nid}
+        print(f"headshots: {sum(1 for s in shots if s)} embedded, {sum(1 for (_, n), s in zip(pairs, shots) if n and not s)} linked", file=sys.stderr)
 
     logos = {}
     for abbr in sorted(set(all_teams.values())):
