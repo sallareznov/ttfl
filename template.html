@@ -1067,17 +1067,18 @@ function renderRosters(){
       <div class="st">${info ? `<span class="pill ${info.cls}" title="${esc(inj.short || "")}">${info.label}</span>` : ""}</div>
       <div class="tt num">${p.avg != null ? `<b>${f1(p.avg)}</b><span>${p.gp} g</span>` : `<b class="muted">–</b>`}${p.prevAvg != null ? `<div class="small muted">${f1(p.prevAvg)} in ${esc(DATA.prevSeason)}</div>` : ""}</div></div>`;
   };
-  const posOrder = {PG:0, G:1, SG:2, GF:3, SF:4, F:5, PF:6, FC:7, C:8};
+  // highest TTFL average first; players with no game this season follow, ranked by last season
+  const byAvg = (a, b) => (b.avg ?? -1e9) - (a.avg ?? -1e9) || (b.prevAvg ?? -1e9) - (a.prevAvg ?? -1e9) || a.name.localeCompare(b.name);
   const thead = t => {
     const g = gameFor(t);
     return `<div class="teamhead">${logoImg(t)}<span>${esc(names[t] || t)}</span><span class="sub">${R[t].coach ? "Coach " + esc(R[t].coach) : ""}${g ? ` · next: ${g.home === t ? "vs " + esc(g.away) : "@ " + esc(g.home)} ${esc(parisClock(new Date(g.time)))}` : ""}</span></div>`;
   };
   let html;
   if (q) {
-    html = abbrs.map(t => { const ps = R[t].players.filter(p => norm(p.name).includes(q) || norm(t) === q); return ps.length ? thead(t) + ps.map(prow).join("") : ""; }).join("");
+    html = abbrs.map(t => { const ps = R[t].players.filter(p => norm(p.name).includes(q) || norm(t) === q).sort(byAvg); return ps.length ? thead(t) + ps.map(prow).join("") : ""; }).join("");
     html = html ? head + html : `<div class="empty">No player matches.</div>`;
   } else {
-    const ps = R[state.team].players.slice().sort((a, b) => (posOrder[a.pos] ?? 9) - (posOrder[b.pos] ?? 9) || a.name.localeCompare(b.name));
+    const ps = R[state.team].players.slice().sort(byAvg);
     html = thead(state.team) + head + (ps.map(prow).join("") || `<div class="empty">No roster listed.</div>`);
   }
   $("#rosterList").innerHTML = html;
