@@ -89,11 +89,11 @@ button.btn:disabled{opacity:.55;cursor:default}
 @media (max-width:640px){
   nav.menu{display:none}
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-  .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
+  .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:var(--vvgap,0px);z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
   .bnav a,.bnav button{display:grid;justify-items:center;gap:2px;padding:5px 0 3px;font:inherit;font-size:.68rem;font-weight:600;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
   .bnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .bnav [aria-current="page"]{color:var(--accent)}
-  .bsheet:not([hidden]){display:grid;position:fixed;right:8px;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:21;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden}
+  .bsheet:not([hidden]){display:grid;position:fixed;right:8px;bottom:calc(68px + env(safe-area-inset-bottom,0px) + var(--vvgap,0px));z-index:21;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden}
   .bsheet a{padding:12px 16px;color:var(--ink);text-decoration:none;font-family:var(--display);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.05em;border-top:1px solid var(--line)}
   .bsheet a:first-child{border-top:0}
   .bsheet a[aria-current="page"]{color:var(--accent)}
@@ -1453,6 +1453,12 @@ function init(){
   $("#bmore").addEventListener("click", e => { e.stopPropagation(); const open = $("#bsheet").hidden; $("#bsheet").hidden = !open; $("#bmore").setAttribute("aria-expanded", String(open)); });
   document.addEventListener("click", e => { if (!e.target.closest("#bsheet")) closeNavPanels(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeNavPanels(); });
+  // iOS Safari can leave its expanded bottom toolbar over fixed elements: lift the tab bar to the visible bottom edge
+  const vv = window.visualViewport;
+  if (vv) {
+    const fitBar = () => { const gap = Math.round(innerHeight - vv.height - vv.offsetTop); document.documentElement.style.setProperty("--vvgap", gap > 0 && gap < 150 ? gap + "px" : "0px"); };
+    vv.addEventListener("resize", fitBar); vv.addEventListener("scroll", fitBar); fitBar();
+  }
   try { $("#lvAuto").checked = localStorage.getItem("ttflLiveAuto") !== "0"; } catch (e) {}
   $("#lvAuto").addEventListener("input", e => { try { localStorage.setItem("ttflLiveAuto", e.target.checked ? "1" : "0"); } catch (x) {} });
   $("#lnList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lnToggle(e); document.querySelector(`.lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
