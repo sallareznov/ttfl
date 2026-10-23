@@ -525,18 +525,18 @@ details.method[open]>summary::after{content:" ▾"}
   <nav class="menu" aria-label="Sections">
     <a href="#home" data-view="home">Home</a>
     <a href="#injuries" data-view="injuries">Injury report</a>
-    <a href="#picks" data-view="picks">Tonight</a>
+    <a href="#tonight" data-view="tonight">Tonight</a>
     <a href="#live" data-view="live">Live</a>
-    <a href="#form" data-view="form">Players</a>
+    <a href="#players" data-view="players">Players</a>
     <a href="#schedule" data-view="schedule">Schedule</a>
-    <a href="#rosters" data-view="rosters">Teams</a>
+    <a href="#teams" data-view="teams">Teams</a>
     <a href="#standings" data-view="standings">Standings</a>
   </nav>
 
 
   <div class="view home" id="view-home" hidden></div>
 
-  <div class="view" id="view-picks" hidden>
+  <div class="view" id="view-tonight" hidden>
   <div class="notice" id="notice" hidden></div>
   <section aria-label="Tonight's games"><div class="slate" id="slate"></div></section>
 
@@ -570,7 +570,7 @@ details.method[open]>summary::after{content:" ▾"}
     <p class="small muted" id="injNote"></p>
   </div>
 
-  <div class="view" id="view-form" hidden>
+  <div class="view" id="view-players" hidden>
     <p class="muted" id="formIntro"></p>
     <div class="controls">
       <input type="search" id="fq" placeholder="Search player or team" aria-label="Search player averages">
@@ -600,7 +600,7 @@ details.method[open]>summary::after{content:" ▾"}
     <div class="injwrap" id="schedList"></div>
   </div>
 
-  <div class="view" id="view-rosters" hidden>
+  <div class="view" id="view-teams" hidden>
     <div class="controls">
       <input type="search" id="rq" placeholder="Search a player in every roster" aria-label="Search rosters">
     </div>
@@ -615,12 +615,12 @@ details.method[open]>summary::after{content:" ▾"}
   </div>
 
   <div class="view" id="view-player" hidden>
-    <a class="back" href="#rosters" id="pBack">← Rosters</a>
+    <a class="back" href="#teams" id="pBack">← Teams</a>
     <div class="view" id="playerBody"></div>
   </div>
 
   <div class="view" id="view-game" hidden>
-    <a class="back" href="#rosters" id="gBack">← Back</a>
+    <a class="back" href="#teams" id="gBack">← Back</a>
     <div class="view" id="gameBody"></div>
   </div>
 </div>
@@ -1423,12 +1423,12 @@ function renderHome(){
   const liveTop = live.doc && live.doc.games.some(g => g.state !== "pre") ? liveRows(live.doc).slice(0, 5) : [];
   const [west, east] = standings();
   $("#view-home").innerHTML = `
-    ${tile("picks", "tonight", "Tonight", DATA.games.length ? `<div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}</span>` : stat(0, "games"))}
+    ${tile("tonight", "tonight", "Tonight", DATA.games.length ? `<div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}</span>` : stat(0, "games"))}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
-    ${tile("form", "form", "Players", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
+    ${tile("players", "form", "Players", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
     ${tile("schedule", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
-    ${tile("rosters", "rosters", "Teams", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
+    ${tile("teams", "rosters", "Teams", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
     ${tile("standings", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(teamShort(x.t))}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`, "wide")}`;
 }
 
@@ -1443,11 +1443,13 @@ function renderStandings(){
   const [west, east] = standings(15);
   $("#standList").innerHTML = west.length || east.length ? conf("West", west) + conf("East", east) : `<div class="empty">No records yet.</div>`;
 }
-const VIEWS = {home: renderHome, standings: renderStandings, picks: null, live: renderLive, injuries: renderInjuries, form: renderForm, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
-let lastView = "rosters", prevHash = "", curView = null;
+const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, player: renderPlayer, game: renderGame};
+let lastView = "teams", prevHash = "", curView = null;
 const toTop = () => window.scrollTo(0, 0);
 function showView(){
   let v = (location.hash || "").slice(1);
+  const moved = {form: "players", rosters: "teams", picks: "tonight"}[v]; // old links
+  if (moved) { history.replaceState(null, "", "#" + moved); v = moved; }
   if (v.startsWith("player-")) {
     const pid = v.slice(7);
     if (state.pid !== pid) { state.pid = pid; state.ps = {type:"all", game:null, zone:null, shot:null, tab:"log", vsTeam:null, vsPlayer:null, scope:"all", logSeason:"cur"}; }
@@ -1501,7 +1503,7 @@ function init(){
   $("#sTeam").addEventListener("input", renderSchedule);
   $("#sDays").addEventListener("click", e => { const b = e.target.closest("[data-sday]"); if (!b) return; state.sday = b.dataset.sday; renderSchedule(); });
   $("#rq").addEventListener("input", renderRosters);
-  const standGo = e => { const r = e.target.closest("[data-team]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; state.team = r.dataset.team; $("#rq").value = ""; location.hash = "rosters"; };
+  const standGo = e => { const r = e.target.closest("[data-team]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; state.team = r.dataset.team; $("#rq").value = ""; location.hash = "teams"; };
   $("#standList").addEventListener("click", standGo); $("#standList").addEventListener("keydown", standGo);
   const formGo = e => { const r = e.target.closest(".golink[data-pid]"); if (r && !e.target.closest("a,button")) location.hash = "player-" + r.dataset.pid; };
   $("#formList").addEventListener("click", formGo);
