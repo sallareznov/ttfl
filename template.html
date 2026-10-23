@@ -388,6 +388,21 @@ a.glink .more{font-size:.78rem;color:var(--accent);font-weight:600}
 .ghead .gscore{font-family:var(--display);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
 .ghead .loss{color:var(--muted)}
 .ghead .gmeta{flex-basis:100%;color:var(--muted);font-size:.9rem}
+.ghead .grec{font-family:var(--body);font-weight:500;font-size:.9rem;color:var(--muted);letter-spacing:0}
+.ghead .gmeta .tag{margin-top:6px}
+.pvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.pvrow{display:grid;grid-template-columns:minmax(0,1fr) 48px 56px;gap:8px;align-items:center;padding:8px 12px;border-top:1px solid var(--line)}
+.pvrow:first-child{border-top:0}
+.pvrow.head{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--muted);font-weight:600}
+.pvrow>.num,.pvrow.head>:nth-child(n+2){text-align:right}
+.pvrow .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card h4{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px;font-size:1rem}
+.card h4 .logo{width:22px;height:22px;vertical-align:-5px;margin-right:4px}
+.pvinj{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:5px 0;border-top:1px solid var(--line)}
+.pvinj:first-of-type{border-top:0}
+.pvmeet{display:grid;gap:2px;padding:8px 12px;border-top:1px solid var(--line);color:inherit;text-decoration:none}
+.pvmeet:first-child{border-top:0}
+a.pvmeet:hover{background:var(--bg)}
 table.stats td.pl{text-align:left;white-space:nowrap}
 table.stats td.pl a{color:inherit;text-decoration:none;font-weight:600}
 table.stats td.pl a:hover{text-decoration:underline}
@@ -617,6 +632,11 @@ details.method[open]>summary::after{content:" ▾"}
   <div class="view" id="view-player" hidden>
     <a class="back" href="#teams" id="pBack">← Teams</a>
     <div class="view" id="playerBody"></div>
+  </div>
+
+  <div class="view" id="view-preview" hidden>
+    <a class="back" href="#schedule" id="prBack">← Schedule</a>
+    <div class="view" id="previewBody"></div>
   </div>
 
   <div class="view" id="view-game" hidden>
@@ -1058,9 +1078,9 @@ function schedGame(g){
   const hw = scored && +g.homeScore > +g.awayScore, aw = scored && +g.awayScore > +g.homeScore;
   const side = (t, rec, sc, lost) => `<div class="line ${done && lost ? "loss" : ""}">${logoImg(t)}${esc(t)}${rec ? `<span class="rec">${esc(rec)}</span>` : ""}${scored ? `<span class="pts">${esc(sc)}</span>` : ""}</div>`;
   const when = done ? `<b>Final</b>${g.detail && g.detail !== "Final" ? " " + esc(g.detail.replace(/^Final\/?/, "")) : ""}` : live ? `<span class="live">Live · ${esc(g.detail || "")}</span>` : `<b>${esc(parisClock(new Date(g.time)))}</b>`;
-  const open = done && (DATA.gamePages || {})[g.id], tag = open ? "a" : "div";
-  return `<${tag} class="sgame ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
-    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
+  const open = done && (DATA.gamePages || {})[g.id], pre = !done && !live, tag = open || pre ? "a" : "div";
+  return `<${tag} class="sgame ${open || pre ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : pre ? `href="#preview-${esc(g.id)}" title="Game preview"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
+    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : pre ? `<span class="more">Preview →</span>` : ""}</div></${tag}>`;
 }
 function renderSchedule(){
   const team = $("#sTeam").value, days = DATA.schedule || [];
@@ -1323,6 +1343,85 @@ function gameIdFor(date, opp){ // game log row (date, opponent) -> game page id
 }
 const boxRow = p => [0, 0, 0].concat(p.slice(4, 17)); // game page player -> game log row shape, for ttfl()
 const shortName = n => n.split(" ").length > 1 ? n.split(" ").slice(1).join(" ") : n;
+// ---- game preview (upcoming games) ----
+function findScheduled(id){
+  for (const d of DATA.schedule || []) { const g = d.games.find(x => x.id === id); if (g) return {g, date: d.date}; }
+  const g = DATA.games.find(x => x.id === id);
+  return g ? {g, date: DATA.date} : null;
+}
+function playedDayBefore(team, date){
+  if (date === DATA.date) { const t = DATA.games.find(x => x.home === team || x.away === team); return !!(t && t.b2b && t.b2b.includes(team)); }
+  const prev = new Date(Date.parse(date + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+  const d = (DATA.schedule || []).find(x => x.date === prev);
+  return !!(d && d.games.some(x => x.home === team || x.away === team));
+}
+function meetings(a, b){
+  // this season's box scores, then older games pieced together from both current rosters' game logs
+  const out = [], seen = new Set();
+  for (const [id, G] of Object.entries(DATA.gamePages || {})) {
+    if (!((G.away === a && G.home === b) || (G.away === b && G.home === a))) continue;
+    const top = G.p.filter(p => p.length > 5).map(p => ({id: p[1], n: p[2], v: ttfl(boxRow(p))})).sort((x, y) => y.v - x.v)[0];
+    out.push({date: G.date, id, away: G.away, home: G.home, score: G.score, top}); seen.add(G.date);
+  }
+  const R = DATA.rosters || {}, byDate = {};
+  for (const [t, o] of [[a, b], [b, a]]) for (const p of (R[t] || {}).players || []) for (const r of p.log || []) {
+    if (r[1] !== o || r[3] <= 0 || seen.has(r[0])) continue;
+    const e = byDate[r[0]] ||= {sides: new Set(), homeVotes: {}, rows: [], po: false};
+    e.sides.add(t); const h = r[2] ? t : o; e.homeVotes[h] = (e.homeVotes[h] || 0) + 1; e.po ||= r[16] === 1;
+    e.rows.push({id: p.id, n: p.name, v: ttfl(r)});
+  }
+  for (const [date, e] of Object.entries(byDate)) {
+    if (e.sides.size < 2) continue; // needs players from both sides, so trades don't invent meetings
+    const home = Object.entries(e.homeVotes).sort((x, y) => y[1] - x[1])[0][0];
+    out.push({date, away: home === a ? b : a, home, top: e.rows.sort((x, y) => y.v - x.v)[0], po: e.po});
+  }
+  return out.sort((x, y) => x.date < y.date ? 1 : -1).slice(0, 6);
+}
+function renderPreview(){
+  const el = $("#previewBody"), hit = findScheduled(state.prid);
+  if (!hit) { el.innerHTML = `<div class="empty">This game isn't on the schedule any more.</div>`; return; }
+  const {g, date} = hit, tn = DATA.teamNames || {}, R = DATA.rosters || {}, sides = [g.away, g.home], recs = [g.awayRec, g.homeRec];
+  const odds = DATA.games.find(x => x.id === g.id) || {};
+  const injById = Object.fromEntries((DATA.injuryList || []).filter(i => i.id).map(i => [i.id, i]));
+  const b2b = sides.filter(t => playedDayBefore(t, date));
+  const team = i => `<div class="gteam">${logoImg(sides[i])}<span>${esc(sides[i])}</span>${recs[i] ? `<span class="grec">${esc(recs[i])}</span>` : ""}</div>`;
+  const meta = [fmtLong(date) + " · " + parisClock(new Date(g.time)) + " Paris", odds.oddsText || g.odds || "", odds.overUnder ? "O/U " + odds.overUnder : "", g.venue || "", (g.tv || []).join(", ")].filter(Boolean).map(esc).join(" · ");
+  const head = `<div class="ghead">${team(0)}<span class="muted">@</span>${team(1)}<div class="gmeta">${meta}${b2b.length ? `<div>${b2b.map(t => `<span class="tag">${esc(t)} B2B</span>`).join(" ")}</div>` : ""}</div></div>`;
+  // best TTFL options
+  const best = t => ((R[t] || {}).players || []).map(p => {
+    const played = (p.log || []).filter(r => r[3] > 0), l5 = played.length ? mean(played.slice(0, 5), ttfl) : null;
+    const inj = injById[p.id], info = injuryInfo(inj);
+    return {p, l5, info, season: p.gp ? p.avg : null};
+  }).filter(x => x.l5 != null).sort((x, y) => y.l5 - x.l5).slice(0, 5);
+  const bestCard = t => `<section class="card"><h3>${logoImg(t)} ${esc(tn[t] || t)}</h3><div class="list">
+    <div class="pvrow head"><div>Player</div><div>L5</div><div>Season</div></div>
+    ${best(t).map(x => `<div class="pvrow golink" data-pid="${esc(x.p.id)}" role="link" tabindex="0"><div class="nmrow"><span class="name">${esc(x.p.name)}</span><span class="pill ${x.info.tone}">${x.info.label}</span></div><div class="num"><b>${f1(x.l5)}</b></div><div class="num muted">${f1(x.season)}</div></div>`).join("") || `<div class="empty">No games yet.</div>`}</div></section>`;
+  // injuries
+  const injCard = t => { const items = (DATA.injuryList || []).filter(i => i.team === t).sort((a, b) => STATUS_ORDER[injuryInfo(a).cls] - STATUS_ORDER[injuryInfo(b).cls] || a.name.localeCompare(b.name));
+    return `<div><h4>${logoImg(t)} ${esc(t)}</h4>${items.length ? items.map(i => { const info = injuryInfo(i); return `<div class="pvinj"><span class="name">${esc(i.name)}</span><span class="pill ${info.tone}" title="${esc(i.short || "")}">${info.label}</span>${i.detail ? `<span class="small muted">${esc(i.detail)}</span>` : ""}</div>`; }).join("") : `<p class="small muted">Nobody on the injury report.</p>`}</div>`; };
+  // matchup
+  const n = sides.map(teamNumbers);
+  let matchup = `<p class="small muted">No scoring numbers yet.</p>`;
+  if (n[0] && n[1]) {
+    const exp = [(n[0].pf + n[1].pa) / 2, (n[1].pf + n[0].pa) / 2], total = exp[0] + exp[1];
+    matchup = `<div class="gl"><table class="stats"><tr><th class="l"></th><th>${esc(sides[0])}</th><th>${esc(sides[1])}</th><th>League</th></tr>
+      <tr><td class="l">Points scored / game</td><td>${f1(n[0].pf)}</td><td>${f1(n[1].pf)}</td><td>${f1(LG)}</td></tr>
+      <tr><td class="l">Points allowed / game</td><td>${f1(n[0].pa)}</td><td>${f1(n[1].pa)}</td><td>${f1(LG)}</td></tr>
+      <tr><td class="l">Expected points tonight</td><td>${f1(exp[0])}</td><td>${f1(exp[1])}</td><td>${f1(LG)}</td></tr></table></div>
+      <p class="small">Expected total <b>${f1(total)}</b> vs a league average of ${f1(2 * LG)}: ${total >= 2 * LG + 4 ? "<b>a high-scoring game</b>, good for TTFL" : total <= 2 * LG - 4 ? "<b>a low-scoring game</b>" : "about average scoring"}${odds.overUnder ? ` (betting total ${odds.overUnder})` : ""}.</p>`;
+  }
+  // previous meetings
+  const ms = meetings(g.away, g.home);
+  const mt = ms.length ? `<div class="list">${ms.map(m => { const top = m.top ? `<span class="small">Top TTFL: ${esc(m.top.n)} <b>${m.top.v}</b></span>` : "";
+      const score = m.score ? `${esc(m.away)} ${m.score[0]} – ${m.score[1]} ${esc(m.home)}` : `${esc(m.away)} @ ${esc(m.home)}`;
+      return `<${m.id ? "a" : "div"} class="pvmeet" ${m.id ? `href="#game-${esc(m.id)}"` : ""}><span class="muted">${new Date(m.date + "T12:00:00Z").toLocaleDateString(undefined, {day:"numeric", month:"short", year:"2-digit"})}${m.po ? " · playoffs" : ""}</span><b>${score}</b>${top}</${m.id ? "a" : "div"}>`; }).join("")}</div>
+      <p class="small muted">Scores are shown for ${DATA.season} games; older games list the best TTFL score among current roster players.</p>` : `<p class="small muted">No meetings since ${DATA.prevSeason}.</p>`;
+  el.innerHTML = `${head}
+    <div class="pvgrid">${bestCard(g.away)}${bestCard(g.home)}</div>
+    <section class="card"><h3>Injury report</h3><div class="pvgrid">${injCard(g.away)}${injCard(g.home)}</div></section>
+    <section class="card"><h3>Matchup</h3>${matchup}</section>
+    <section class="card"><h3>Previous meetings</h3>${mt}</section>`;
+}
 function renderGame(){
   const G = (DATA.gamePages || {})[state.gid], el = $("#gameBody"), gs = state.gs;
   if (!G) { el.innerHTML = `<div class="empty">This game isn't available. Box scores cover ${DATA.season} games only.</div>`; return; }
@@ -1443,7 +1542,7 @@ function renderStandings(){
   const [west, east] = standings(15);
   $("#standList").innerHTML = west.length || east.length ? conf("West", west) + conf("East", east) : `<div class="empty">No records yet.</div>`;
 }
-const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, player: renderPlayer, game: renderGame};
+const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, preview: renderPreview, player: renderPlayer, game: renderGame};
 let lastView = "teams", prevHash = "", curView = null;
 const toTop = () => window.scrollTo(0, 0);
 function showView(){
@@ -1455,6 +1554,12 @@ function showView(){
     if (state.pid !== pid) { state.pid = pid; state.ps = {type:"all", game:null, zone:null, shot:null, tab:"log", vsTeam:null, vsPlayer:null, scope:"all", logSeason:"cur"}; }
     $("#pBack").href = "#" + lastView; $("#pBack").textContent = "← " + ($(`nav.menu a[data-view="${lastView}"]`)?.textContent || "Back");
     v = "player"; toTop();
+  } else if (v.startsWith("preview-")) {
+    state.prid = v.slice(8);
+    if (prevHash && !/^#(player|game|preview)-/.test(prevHash)) state.prBack = prevHash;
+    const back = state.prBack || "#schedule";
+    $("#prBack").href = back; $("#prBack").textContent = "← " + ($(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
+    v = "preview"; toTop();
   } else if (v.startsWith("game-")) {
     const gid = v.slice(5);
     if (state.gid !== gid) { state.gid = gid; state.gs = {period:"1", scoring:false, tab:null}; }
@@ -1464,12 +1569,12 @@ function showView(){
     v = "game"; toTop();
   } else if (v === "lastnight") v = "live"; // old links
   else if (!(v in VIEWS)) v = "home";
-  if (v !== "player" && v !== "game") lastView = v;
+  if (v !== "player" && v !== "game" && v !== "preview") lastView = v;
   prevHash = location.hash;
   for (const k in VIEWS) $("#view-" + k).hidden = k !== v;
   if (v !== curView) { curView = v; toTop(); }
   document.documentElement.dataset.view = v;
-  const tab = v === "player" || v === "game" ? lastView : v;
+  const tab = v === "player" || v === "game" || v === "preview" ? lastView : v;
   document.querySelectorAll("a[data-view]").forEach(a => a.setAttribute("aria-current", a.dataset.view === tab ? "page" : "false"));
   if (VIEWS[v]) VIEWS[v]();
 }
@@ -1505,6 +1610,8 @@ function init(){
   $("#rq").addEventListener("input", renderRosters);
   const standGo = e => { const r = e.target.closest("[data-team]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; state.team = r.dataset.team; $("#rq").value = ""; location.hash = "teams"; };
   $("#standList").addEventListener("click", standGo); $("#standList").addEventListener("keydown", standGo);
+  const pvGo = e => { const r = e.target.closest(".golink[data-pid]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; location.hash = "player-" + r.dataset.pid; };
+  $("#previewBody").addEventListener("click", pvGo); $("#previewBody").addEventListener("keydown", pvGo);
   const formGo = e => { const r = e.target.closest(".golink[data-pid]"); if (r && !e.target.closest("a,button")) location.hash = "player-" + r.dataset.pid; };
   $("#formList").addEventListener("click", formGo);
   $("#formList").addEventListener("keydown", e => { if (e.key === "Enter") formGo(e); });
