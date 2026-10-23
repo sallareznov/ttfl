@@ -32,7 +32,7 @@ jobs:
         run: |
           for i in 1 2; do timeout 900 python3 build_data.py next data.json && break; sleep 30; done
           mkdir -p site
-          python3 render_page.py data.json site/index.html
+          python3 render_page.py data.json site/index.html --standalone
       - name: Save shot cache
         run: |
           git config user.name "ttfl-bot"

@@ -22,7 +22,7 @@
   --accent:#f07a35; --accent-soft:#3a2416;
   --ok:#5cc792; --ok-soft:#163626; --warn:#e3b04f; --warn-soft:#3a2e12; --bad:#f08a82; --bad-soft:#40201d;
   --spark:#5d6577; color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .wrap>*{min-width:0}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:20px}
 h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
@@ -150,6 +150,9 @@ svg.evo .ar{fill:var(--accent-soft)}
   .idetail{padding-left:0}
 }
 #fresh{text-align:right}
+.hright{display:grid;gap:6px;justify-items:end}
+.hright .ghost{font-size:.85rem}
+@media (max-width:640px){.hright{justify-items:start}}
 #fresh b{color:var(--ink);font-weight:600}
 @media (max-width:640px){#fresh{text-align:left}}
 .deadline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:12px 16px;border-radius:10px;background:var(--ink);color:var(--bg)}
@@ -393,7 +396,7 @@ table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
       <div class="eyebrow" id="eyebrow">TTFL</div>
       <h1 id="h1">Tonight's picks</h1>
     </div>
-    <div class="small muted" id="fresh"></div>
+    <div class="hright"><div class="small muted" id="fresh"></div><button class="ghost" type="button" id="themeBtn"></button></div>
   </header>
   <div class="deadline" id="deadline" hidden></div>
   <nav class="menu" aria-label="Sections">
@@ -495,6 +498,11 @@ table.stats td.sep,table.stats th.sep{border-left:1px solid var(--line)}
 </div>
 
 <script>
+// light by default; the header button switches to dark and the choice is remembered on this device
+let theme = "light";
+try { theme = localStorage.getItem("ttflTheme") === "dark" ? "dark" : "light"; } catch (e) {}
+function applyTheme(){ document.documentElement.dataset.theme = theme; const b = document.getElementById("themeBtn"); if (b) b.textContent = theme === "dark" ? "Light mode" : "Dark mode"; }
+applyTheme();
 const DATA = /*__DATA__*/null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1299,13 +1307,15 @@ function showView(){
 }
 
 function init(){
+  applyTheme();
+  $("#themeBtn").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; try { localStorage.setItem("ttflTheme", theme); } catch (e) {} applyTheme(); });
   if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
   leagueAvg();
   const d = new Date(DATA.date + "T12:00:00Z");
   $("#eyebrow").textContent = `TTFL · ${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}`;
   $("#h1").textContent = "Picks for the night of " + d.toLocaleDateString(undefined, {weekday:"long", day:"numeric", month:"long"});
   const gen = new Date(DATA.generated);
-  $("#fresh").innerHTML = `<b>Updated ${esc(gen.toLocaleString(undefined, {timeZone: TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}))}</b><br>Refreshes every hour from 16:00 to 03:00 · all times are Paris time`;
+  $("#fresh").innerHTML = `<b>Updated ${esc(gen.toLocaleString(undefined, {timeZone: TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}))}</b><br>Refreshes every hour · all times are Paris time`;
   const anyCur = DATA.players.some(p => p.cur.length);
   if (!anyCur) { const n = $("#notice"); n.hidden = false; n.textContent = `No ${DATA.season} games have been played yet, so form comes from the ${DATA.prevSeason} season and each player's last 10 games (playoffs included). Rosters and injuries are current.`; }
   renderSlate(); render();
