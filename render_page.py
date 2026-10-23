@@ -15,5 +15,7 @@ page = tpl.replace("/*__DATA__*/null", data, 1)
 if standalone:
     page = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            '<meta name="color-scheme" content="light dark"></head><body>\n' + page + '\n</body></html>\n')
+            # no </head><body> here: the template's leading <title>, <link> and <meta> tags must stay in <head>
+            # (iOS only reads the home screen icon from there); the parser opens <body> at the first element
+            '<meta name="color-scheme" content="light dark">\n' + page + '\n</body></html>\n')
 pathlib.Path(sys.argv[2]).write_text(page)
