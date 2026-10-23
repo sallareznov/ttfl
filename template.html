@@ -84,16 +84,20 @@ nav.menu a:hover{color:var(--ink)}
 .score .gst.on{color:var(--bad);font-weight:600}
 .lvtag{color:var(--bad);font-weight:600}
 button.btn:disabled{opacity:.55;cursor:default}
-/* phone navigation: fixed bottom tab bar, with a "More" sheet for the rest */
+/* phone navigation: bottom tab bar with a "More" sheet for the rest. The page is an app shell on phones
+   (the content scrolls inside .wrap, the bar is a normal flex item below it) because mobile WebKit can slide
+   position:fixed bottom bars under the browser's own bottom toolbar. */
 .bnav,.bsheet{display:none}
 @media (max-width:640px){
   nav.menu{display:none}
-  body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-  .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:var(--vvgap,0px);z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;flex-direction:column;height:100dvh}
+  .wrap{flex:1 1 auto;width:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .bnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:0 0 auto;position:relative;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
   .bnav a,.bnav button{display:grid;justify-items:center;gap:2px;padding:5px 0 3px;font:inherit;font-size:.68rem;font-weight:600;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
   .bnav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .bnav [aria-current="page"]{color:var(--accent)}
-  .bsheet:not([hidden]){display:grid;position:fixed;right:8px;bottom:calc(68px + env(safe-area-inset-bottom,0px) + var(--vvgap,0px));z-index:21;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden}
+  .bsheet:not([hidden]){display:grid;position:fixed;right:8px;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:21;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);overflow:hidden}
   .bsheet a{padding:12px 16px;color:var(--ink);text-decoration:none;font-family:var(--display);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.05em;border-top:1px solid var(--line)}
   .bsheet a:first-child{border-top:0}
   .bsheet a[aria-current="page"]{color:var(--accent)}
@@ -517,14 +521,6 @@ details.method[open]>summary::after{content:" ▾"}
     <a href="#rosters" data-view="rosters">Rosters</a>
   </nav>
 
-  <nav class="bnav" aria-label="Sections">
-    <a href="#picks" data-view="picks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>Tonight</a>
-    <a href="#injuries" data-view="injuries"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>Injuries</a>
-    <a href="#live" data-view="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/></svg>Live</a>
-    <a href="#lastnight" data-view="lastnight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Last night</a>
-    <button type="button" id="bmore" aria-expanded="false" aria-controls="bsheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>More</button>
-  </nav>
-  <div class="bsheet" id="bsheet" hidden><a href="#form" data-view="form">In form</a><a href="#schedule" data-view="schedule">Schedule</a><a href="#rosters" data-view="rosters">Rosters</a></div>
 
   <div class="view" id="view-picks">
   <div class="notice" id="notice" hidden></div>
@@ -545,8 +541,8 @@ details.method[open]>summary::after{content:" ▾"}
     <summary>How the ranking works</summary>
     <p><b>TTFL score</b> = points + rebounds + assists + steals + blocks + made shots + made threes + made free throws − turnovers − missed shots − missed threes − missed free throws. So a made three is worth +5 (3 points, +1 shot, +1 three) and a missed three −2.</p>
     <p><b>Form</b> blends the season average (half), the last 10 games (30%) and the last 5 (20%). Early in a season the current season is mixed with last season, moving fully to the current season after 15 games.</p>
-    <p><b>Matchup</b> compares each team's expected points (its scoring averaged with the opponent's points allowed) to the league average. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
-    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, rosters, injury report and game logs.</p>
+    <p><b>Matchup</b> uses the betting line when there is one: the game total and spread give each team's expected points, compared to the league average. Without a line it uses the teams' scoring and points allowed. <b>Back-to-back</b> −5%. <b>Home</b> +1.5%, <b>away</b> −1.5%. <b>Blowout risk</b> (spread of 10 or more) trims starters by 5%. <b>Teammates out</b> adds up to 10% for rotation players when regulars on their team are ruled out. Each factor is shown as the TTFL points it adds or removes from the player's form.</p>
+    <p><b>Expected</b> = projection × chance of playing (out 0%, doubtful 20%, questionable 55%, day-to-day 75%, probable 95%). Data from ESPN: schedule, odds, rosters, injury report and game logs.</p>
   </details>
   </div>
 
@@ -613,6 +609,14 @@ details.method[open]>summary::after{content:" ▾"}
     <div class="view" id="gameBody"></div>
   </div>
 </div>
+<nav class="bnav" aria-label="Sections">
+  <a href="#picks" data-view="picks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>Tonight</a>
+  <a href="#injuries" data-view="injuries"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>Injuries</a>
+  <a href="#live" data-view="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/></svg>Live</a>
+  <a href="#lastnight" data-view="lastnight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Last night</a>
+  <button type="button" id="bmore" aria-expanded="false" aria-controls="bsheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>More</button>
+</nav>
+<div class="bsheet" id="bsheet" hidden><a href="#form" data-view="form">In form</a><a href="#schedule" data-view="schedule">Schedule</a><a href="#rosters" data-view="rosters">Rosters</a></div>
 
 <script>
 // light by default; the header button switches to dark and the choice is remembered on this device
@@ -682,12 +686,17 @@ function project(p, outMinByTeam){
   if (!b || !g) { res.proj = null; res.exp = -1; return res; }
   const add = (label, m, note) => { res.factors.push({label, m, note, pts: b.form * res.mult * (m - 1)}); res.mult *= m; };
   // matchup: expected team points vs league average
-  let teamPts;
-  const me = teamNumbers(p.team), them = teamNumbers(opp);
-  if (me && them && me.pf && them.pa) teamPts = (me.pf + them.pa) / 2;
-  if (teamPts) add("Matchup", 1 + .8 * (teamPts / LG - 1), `${p.team} expected ${teamPts.toFixed(1)} pts (season scoring), league avg ${LG.toFixed(1)}`);
+  let teamPts, how;
+  if (g.overUnder && g.spread != null && g.favorite) {
+    teamPts = g.overUnder / 2 + (g.favorite === p.team ? g.spread / 2 : -g.spread / 2); how = "betting line";
+  } else {
+    const me = teamNumbers(p.team), them = teamNumbers(opp);
+    if (me && them && me.pf && them.pa) { teamPts = (me.pf + them.pa) / 2; how = "season scoring"; }
+  }
+  if (teamPts) add("Matchup", 1 + .8 * (teamPts / LG - 1), `${p.team} expected ${teamPts.toFixed(1)} pts (${how}), league avg ${LG.toFixed(1)}`);
   add(home ? "Home" : "Away", home ? 1.015 : .985, home ? "Home game" : "Road game");
   if (g.b2b && g.b2b.includes(p.team)) add("Back-to-back", .95, `${p.team} played yesterday`);
+  if (g.spread != null && g.spread >= 10 && b.sMin >= 24) add("Blowout risk", .95, `Spread ${g.spread}: starters may sit late`);
   const om = outMinByTeam[p.team];
   if (om && om.min >= 15 && b.sMin >= 20) {
     const own = om.names.includes(p.name) ? 0 : 1;
@@ -795,7 +804,7 @@ function renderSlate(){
     const b2b = (g.b2b || []).map(x => `<span class="tag">${esc(x)} back-to-back</span>`).join(" ");
     return `<button type="button" class="game" data-game="${esc(g.id)}" aria-pressed="${state.game === g.id}">
       <span class="teams">${logoImg(g.away)}${esc(g.away)} <span class="muted">@</span> ${logoImg(g.home)}${esc(g.home)}</span>
-      <span class="meta"><span>${t}</span></span>
+      <span class="meta"><span>${t}</span>${g.oddsText ? `<span>${esc(g.oddsText)}</span>` : ""}${g.overUnder ? `<span>O/U ${g.overUnder}</span>` : ""}</span>
       ${b2b ? `<span>${b2b}</span>` : ""}</button>`;
   }).join("") || `<div class="muted">No NBA games on this date.</div>`;
 }
@@ -1075,7 +1084,7 @@ function schedGame(g){
   const when = done ? `<b>Final</b>${g.detail && g.detail !== "Final" ? " " + esc(g.detail.replace(/^Final\/?/, "")) : ""}` : live ? `<span class="live">Live · ${esc(g.detail || "")}</span>` : `<b>${esc(parisClock(new Date(g.time)))}</b>`;
   const open = done && (DATA.gamePages || {})[g.id], tag = open ? "a" : "div";
   return `<${tag} class="sgame ${open ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
-    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
+    <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : ""}</div></${tag}>`;
 }
 function renderSchedule(){
   const team = $("#sTeam").value, days = DATA.schedule || [];
@@ -1397,20 +1406,22 @@ function onPlayerClick(e){
 const VIEWS = {picks: null, live: renderLive, injuries: renderInjuries, form: renderForm, lastnight: renderLastNight, schedule: renderSchedule, rosters: renderRosters, player: renderPlayer, game: renderGame};
 let lastView = "rosters", prevHash = "";
 function closeNavPanels(){ $("#bsheet").hidden = true; $("#bmore").setAttribute("aria-expanded", "false"); }
+// on phones the content scrolls inside .wrap, elsewhere the window scrolls
+const toTop = () => { window.scrollTo(0, 0); $(".wrap").scrollTop = 0; };
 function showView(){
   let v = (location.hash || "").slice(1);
   if (v.startsWith("player-")) {
     const pid = v.slice(7);
     if (state.pid !== pid) { state.pid = pid; state.ps = {type:"all", game:null, zone:null, shot:null, tab:"log", vsTeam:null, vsPlayer:null, scope:"all", logSeason:"cur"}; }
     $("#pBack").href = "#" + lastView; $("#pBack").textContent = "← " + ($(`nav.menu a[data-view="${lastView}"]`)?.textContent || "Back");
-    v = "player"; window.scrollTo(0, 0);
+    v = "player"; toTop();
   } else if (v.startsWith("game-")) {
     const gid = v.slice(5);
     if (state.gid !== gid) { state.gid = gid; state.gs = {period:"1", scoring:false, tab:null}; }
     const back = prevHash && !prevHash.startsWith("#game-") ? prevHash : "#" + lastView;
     if (state.gs.tab == null) state.gs.fromPid = back.startsWith("#player-") ? back.slice(8) : null;
     $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
-    v = "game"; window.scrollTo(0, 0);
+    v = "game"; toTop();
   } else if (!(v in VIEWS)) v = "injuries";
   if (v !== "player" && v !== "game") lastView = v;
   prevHash = location.hash;
@@ -1448,12 +1459,6 @@ function init(){
   $("#bmore").addEventListener("click", e => { e.stopPropagation(); const open = $("#bsheet").hidden; $("#bsheet").hidden = !open; $("#bmore").setAttribute("aria-expanded", String(open)); });
   document.addEventListener("click", e => { if (!e.target.closest("#bsheet")) closeNavPanels(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeNavPanels(); });
-  // iOS Safari can leave its expanded bottom toolbar over fixed elements: lift the tab bar to the visible bottom edge
-  const vv = window.visualViewport;
-  if (vv) {
-    const fitBar = () => { const gap = Math.round(innerHeight - vv.height - vv.offsetTop); document.documentElement.style.setProperty("--vvgap", gap > 0 && gap < 150 ? gap + "px" : "0px"); };
-    vv.addEventListener("resize", fitBar); vv.addEventListener("scroll", fitBar); fitBar();
-  }
   try { $("#lvAuto").checked = localStorage.getItem("ttflLiveAuto") !== "0"; } catch (e) {}
   $("#lvAuto").addEventListener("input", e => { try { localStorage.setItem("ttflLiveAuto", e.target.checked ? "1" : "0"); } catch (x) {} });
   $("#lnList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lnToggle(e); document.querySelector(`.lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
