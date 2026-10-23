@@ -345,7 +345,6 @@ def schedule_day(date):
                     "awayScore": a.get("score") if st.get("state") != "pre" else None,
                     "homeRec": rec(h), "awayRec": rec(a), "tv": tv,
                     "venue": (c.get("venue") or {}).get("fullName"),
-                    "odds": ((c.get("odds") or [{}])[0]).get("details"),
                     "type": (ev.get("season") or {}).get("type")})
     return out
 
@@ -369,15 +368,9 @@ def main():
         c = ev["competitions"][0]
         h = next(x for x in c["competitors"] if x["homeAway"] == "home")
         a = next(x for x in c["competitors"] if x["homeAway"] == "away")
-        odds = (c.get("odds") or [{}])[0]
-        fav = None
-        if odds.get("homeTeamOdds", {}).get("favorite"): fav = h["team"]["abbreviation"]
-        elif odds.get("awayTeamOdds", {}).get("favorite"): fav = a["team"]["abbreviation"]
         g = {"id": ev["id"], "time": ev["date"], "status": c["status"]["type"]["name"],
              "home": h["team"]["abbreviation"], "away": a["team"]["abbreviation"],
-             "homeId": h["team"]["id"], "awayId": a["team"]["id"],
-             "overUnder": odds.get("overUnder"), "spread": abs(odds["spread"]) if odds.get("spread") is not None else None,
-             "favorite": fav, "oddsText": odds.get("details")}
+             "homeId": h["team"]["id"], "awayId": a["team"]["id"]}
         games.append(g)
         teams_tonight[g["homeId"]] = g["home"]; teams_tonight[g["awayId"]] = g["away"]
 
