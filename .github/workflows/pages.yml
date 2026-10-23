@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["build_data.py", "render_page.py", "template.html", "apple-touch-icon.png", ".github/workflows/pages.yml"]
+    paths: ["build_data.py", "render_page.py", "template.html", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "manifest.webmanifest", ".github/workflows/pages.yml"]
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
           for i in 1 2; do timeout 900 python3 build_data.py next data.json && break; sleep 30; done
           mkdir -p site
           python3 render_page.py data.json site/index.html --standalone
-          cp apple-touch-icon.png site/
+          cp apple-touch-icon.png icon-192.png icon-512.png manifest.webmanifest site/
       - name: Save shot cache
         run: |
           git config user.name "ttfl-bot"
