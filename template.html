@@ -247,7 +247,7 @@ button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var
 .who{display:flex;gap:10px;align-items:center;min-width:0}
 .badge{width:38px;height:38px;border-radius:50%;background:var(--bg);color:var(--muted);flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.03em}
 .who .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nmrow{display:flex;align-items:center;gap:6px;min-width:0}.nmrow .name{min-width:0}.nmrow .pill{flex:none}
+.nmrow{display:flex;align-items:center;gap:6px;min-width:0}.nmrow .name{min-width:0}.nmrow .pill,.nmrow .tag{flex:none}
 .who .sub{font-size:.8rem;color:var(--muted)}
 .exp{font-family:var(--display);font-size:1.7rem;font-weight:700;line-height:1;color:var(--accent)}
 .exp small{display:block;font-family:var(--body);font-size:.72rem;font-weight:500;color:var(--muted)}
@@ -775,7 +775,7 @@ function render(){
     const open = state.open.has(p.id);
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
-        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.tone}">${r.inj.label}</span></div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
+        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.tone}">${r.inj.label}</span>${r.g && r.g.b2b && r.g.b2b.includes(p.team) ? `<span class="tag" title="${esc(p.team)} played yesterday">B2B</span>` : ""}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
       <div class="expc"><div class="exp num">${b ? f1(b.l5) : "–"}<small>${b ? "L5 · proj " + f1(Math.max(r.exp, 0)) : "no NBA games"}</small></div></div>
       <div class="form num">${b ? `<span>L10 <b>${f1(b.l10)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
       <div class="sp">${b ? spark(b.L10.map(ttfl), b.l5) : ""}</div>
