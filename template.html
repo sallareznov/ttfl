@@ -897,7 +897,7 @@ function renderForm(){
   const rec = DATA.recent || {}, q = norm($("#fq").value || ""), only = $("#fNext").checked, nt = nextTeams();
   const seasonById = Object.fromEntries(DATA.players.map(p => [p.id, base(p)]));
   let rows = Object.entries(rec).map(([id, e]) => {
-    const r = e.rows; if (r.length < 2) return null;
+    const r = e.rows; if (!r.length) return null;
     const avg = mean(r, ttfl), b = seasonById[id];
     return {id, e, avg, n: r.length, best: Math.max(...r.map(ttfl)), min: mean(r, x => x[3]), season: b ? b.season : null, plays: nt.has(e.team)};
   }).filter(x => x && (!only || x.plays) && (!q || norm(x.e.name + x.e.team).includes(q)));
@@ -905,7 +905,7 @@ function renderForm(){
   rows = rows.slice(0, 60);
   $("#formList").hidden = !Object.keys(rec).length;
   $("#formIntro").textContent = Object.keys(rec).length
-    ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 2 games). Players in the next games show how that compares with their season average.`
+    ? `Average TTFL score in games since ${fmtDay(DATA.recentFrom)} (at least 1 game). Players in the next games show how that compares with their season average.`
     : `No regular-season games in the last 15 days yet. This list fills in after the first games of the season; until then the Tonight page uses last season's averages.`;
   $("#formList").innerHTML = rows.length ? `<div class="lrow head"><div>#</div><div>Player</div><div>Avg TTFL</div><div>Recent games</div></div>` + capped("form", rows, q).map((x, k) => {
     const diff = x.season != null ? x.avg - x.season : null;
@@ -1426,7 +1426,7 @@ function renderHome(){
   const stat = (big, txt) => `<div class="stat"><b>${big}</b><span class="val">${txt}</span></div>`;
   const d = deadlineInfo(), ms = d ? d.when - Date.now() : 0;
   const left = !d ? "" : ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)} h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}</b>`;
-  const form = Object.values(DATA.recent || {}).filter(e => e.rows.length >= 2).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 5);
+  const form = Object.values(DATA.recent || {}).filter(e => e.rows.length).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 5);
   const nt = nextTeams(), inj = (DATA.injuryList || []).filter(i => nt.has(i.team));
   const out = inj.filter(i => injuryInfo(i).cls === "out").length;
   const next = (DATA.schedule || []).slice(1).find(x => x.games.length);
