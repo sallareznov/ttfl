@@ -247,6 +247,22 @@ button.btn{font:inherit;font-weight:600;border:0;border-radius:8px;padding:7px 1
 button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:4px 10px;cursor:pointer}
 /* board */
 .board{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.best{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
+.best .lbl{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.85rem;color:var(--muted);font-weight:600}
+.best .bmain{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;color:inherit;text-decoration:none}
+.best .bmain .logo{width:40px;height:40px}
+.best .bmain .name{font-weight:700;font-size:1.15rem}
+.best .bmain .sub{color:var(--muted);font-size:.85rem}
+.best .bmain .exp{font-family:var(--display);font-size:2rem;font-weight:700;color:var(--accent);line-height:1;text-align:right}
+.best .bmain .exp small{display:block;font-family:var(--body);font-size:.75rem;font-weight:500;color:var(--muted)}
+.best .bnext{font-size:.9rem;color:var(--muted)}.best a{color:inherit}
+.best .bwait{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:8px}
+.best .brow{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:.88rem;padding:3px 0}
+.best .brow>span{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.best .brow .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.best .vd{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px}
+.best .vd.use{background:var(--ok-soft);color:var(--ok)}.best .vd.wait{background:var(--qs-soft);color:var(--qs)}
+
 .row{display:grid;grid-template-columns:minmax(0,2.3fr) 90px minmax(0,1.3fr) 104px minmax(0,1.6fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
 .row.head{border-top:0;font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;color:var(--muted);font-weight:600;padding-block:8px}
 .row.item{cursor:pointer}
@@ -554,6 +570,7 @@ details.method[open]>summary::after{content:" ▾"}
   <div class="view" id="view-tonight" hidden>
   <div class="notice" id="notice" hidden></div>
   <section aria-label="Tonight's games"><div class="slate" id="slate"></div></section>
+  <section class="best" id="best" aria-label="Best pick" hidden></section>
 
 
   <div class="controls">
@@ -793,6 +810,7 @@ function render(){
     (outMin[p.team] ||= {min:0, names:[]}); outMin[p.team].min += b.sMin; outMin[p.team].names.push(p.name);
   }
   let rows = DATA.players.map(p => project(p, outMin));
+  renderBest(rows);
   rows = rows.filter(r => {
     if (state.game && !(r.g && r.g.id === state.game)) return false;
     if (hideOut && r.inj.prob === 0) return false;
@@ -818,6 +836,46 @@ function render(){
     </div>`;
   });
   $("#rows").innerHTML = rows.length ? html.join("") : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
+}
+
+// ---- best pick + use-tonight-or-wait ----
+// future games: same form, season-scoring matchup, home/away and back-to-back (no odds or injury news yet)
+function upcoming(r, n = 4){
+  const t = r.p.team, me = teamNumbers(t), out = [], days = DATA.schedule || [];
+  if (!me || !r.b) return out;
+  for (const d of days) {
+    if (d.date <= DATA.date) continue;
+    const g = d.games.find(x => x.home === t || x.away === t); if (!g) continue;
+    const home = g.home === t, opp = home ? g.away : g.home, them = teamNumbers(opp);
+    const prev = new Date(Date.parse(d.date + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+    const b2b = (days.find(x => x.date === prev) || {games: []}).games.some(x => x.home === t || x.away === t);
+    let m = (home ? 1.015 : .985) * (b2b ? .95 : 1);
+    if (them && me.pf && them.pa) m *= 1 + .8 * ((me.pf + them.pa) / 2 / LG - 1);
+    out.push({date: d.date, home, opp, proj: r.b.form * m});
+    if (out.length >= n) break;
+  }
+  return out;
+}
+function renderBest(rows){
+  const el = $("#best");
+  const top = rows.filter(r => r.b && r.g && r.inj.prob > 0).sort((a, b) => b.exp - a.exp).slice(0, 5);
+  if (!top.length) { el.hidden = true; return; }
+  const wd = iso => new Date(iso + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"});
+  const vs = r => `${r.home ? "vs" : "@"} ${esc(r.opp)}`;
+  const b = top[0];
+  const verdict = r => {
+    const up = upcoming(r), best = up.reduce((m, x) => !m || x.proj > m.proj ? x : m, null);
+    if (best && best.proj - r.proj >= 2) return `<span class="vd wait">Wait</span><span class="muted"><b>${f1(best.proj)}</b> ${vs(best)} ${wd(best.date)}</span>`;
+    return `<span class="vd use">Use tonight</span><span class="muted">${best ? `next best ${f1(best.proj)} ${vs(best)} ${wd(best.date)}` : "no later games yet"}</span>`;
+  };
+  el.hidden = false;
+  el.innerHTML = `<div class="bhead"><span class="lbl">Best pick tonight</span></div>
+    <a class="bmain" href="#player-${esc(b.p.id)}">${logoImg(b.p.team)}<div style="min-width:0"><div class="nmrow"><span class="name">${esc(b.p.name)}</span><span class="pill ${b.inj.tone}">${b.inj.label}</span></div>
+      <div class="sub">${esc(b.p.team)} ${b.home ? "vs" : "@"} ${esc(b.opp)} · L5 ${f1(b.b.l5)}${b.factors.filter(x => Math.abs(x.pts) >= .05).map(x => ` · ${esc(x.label)} ${pts(x.pts)}`).join("")}</div></div>
+      <div class="exp num">${f1(Math.max(b.exp, 0))}<small>projected</small></div></a>
+    <div class="bnext">Next best: ${top.slice(1, 3).map(r => `<a href="#player-${esc(r.p.id)}">${esc(r.p.name)}</a> ${f1(Math.max(r.exp, 0))}`).join(" · ")}</div>
+    <div class="bwait"><div class="lbl">Use tonight or wait?</div>${top.map(r => `<div class="brow"><a href="#player-${esc(r.p.id)}" class="name">${esc(r.p.name)}</a><span>${verdict(r)}</span></div>`).join("")}
+    <p class="small muted">Compares tonight's projection with his next 4 games. Later games use season scoring only (no betting lines or injury news yet), so "Wait" needs a game at least 2 TTFL points better.</p></div>`;
 }
 
 function renderSlate(){
