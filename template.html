@@ -271,6 +271,8 @@ button.ghost{font:inherit;background:none;border:1px solid var(--line);color:var
 .who{display:flex;gap:10px;align-items:center;min-width:0}
 .badge{width:38px;height:38px;border-radius:50%;background:var(--bg);color:var(--muted);flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.03em}
 .who .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plink{color:inherit;text-decoration:none}.plink:hover{text-decoration:underline}
+.lvrow .plink{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nmrow{display:flex;align-items:center;gap:6px;min-width:0}.nmrow .name{min-width:0}.nmrow .pill,.nmrow .tag{flex:none}
 .who .sub{font-size:.8rem;color:var(--muted)}
 .exp{font-family:var(--display);font-size:1.7rem;font-weight:700;line-height:1;color:var(--accent)}
@@ -827,7 +829,7 @@ function render(){
     const open = state.open.has(p.id);
     return `<div class="row item ${r.inj.prob === 0 ? "outrow" : ""}" data-id="${esc(p.id)}" aria-expanded="${open}">
       <div class="who">${logoImg(p.team)}
-        <div style="min-width:0"><div class="nmrow"><span class="name">${esc(p.name)}</span><span class="pill ${r.inj.tone}">${r.inj.label}</span>${r.g && r.g.b2b && r.g.b2b.includes(p.team) ? `<span class="tag" title="${esc(p.team)} played yesterday">B2B</span>` : ""}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
+        <div style="min-width:0"><div class="nmrow">${ROSTER_BY_ID()[p.id] ? `<a class="name plink" href="#player-${esc(p.id)}">${esc(p.name)}</a>` : `<span class="name">${esc(p.name)}</span>`}<span class="pill ${r.inj.tone}">${r.inj.label}</span>${r.g && r.g.b2b && r.g.b2b.includes(p.team) ? `<span class="tag" title="${esc(p.team)} played yesterday">B2B</span>` : ""}</div><div class="sub">${esc(p.team)} ${r.g ? (r.home ? "vs" : "@") + " " + esc(r.opp) : ""} · ${esc(p.pos || "")}</div></div></div>
       <div class="expc"><div class="exp num">${b ? f1(b.l5) : "–"}<small>${b ? "L5 · proj " + f1(Math.max(r.exp, 0)) : "no NBA games"}</small></div></div>
       <div class="form num">${b ? `<span>L10 <b>${f1(b.l10)}</b></span><span class="muted">${tr}</span>` : `<span class="muted">No data yet</span>`}</div>
       <div class="sp">${b ? spark(b.L10.map(ttfl), b.l5) : ""}</div>
@@ -1123,7 +1125,7 @@ function renderLive(){
     const open = live.open.has(x.id), g = x.g;
     const gs = g.state === "in" ? `<span class="gs on">${esc(g.detail || "Live")}</span>` : g.state === "post" ? `<span class="gs">Final</span>` : `<span class="gs"></span>`;
     return `<div class="lrow lnrow lvrow${k === 0 && !q ? " top" : ""}" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
-    <div style="min-width:0"><div class="name">${esc(x.name)}</div><div class="sub">${esc(x.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])} · ${Math.round(x.r[3])} min</div></div>
+    <div style="min-width:0">${ROSTER_BY_ID()[x.id] ? `<a class="name plink" href="#player-${esc(x.id)}">${esc(x.name)}</a>` : `<div class="name">${esc(x.name)}</div>`}<div class="sub">${esc(x.team)} ${x.r[2] ? "vs" : "@"} ${esc(x.r[1])} · ${Math.round(x.r[3])} min</div></div>
     ${gs}<div class="tl">${logoImg(x.team)}</div>
     <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div>
     ${open ? scorecard(x.r, x.s, x.id, x.name, x.evo, null, $("#lvList")) : ""}</div>`;
@@ -1650,8 +1652,8 @@ function init(){
   if (!anyCur) { const n = $("#notice"); n.hidden = false; n.textContent = `No ${DATA.season} games have been played yet, so form comes from the ${DATA.prevSeason} season and each player's last 10 games (playoffs included). Rosters and injuries are current.`; }
   renderSlate(); render();
   $("#slate").addEventListener("click", e => { const b = e.target.closest("[data-game]"); if (!b) return; state.game = state.game === b.dataset.game ? null : b.dataset.game; renderSlate(); render(); });
-  $("#rows").addEventListener("click", e => { if (e.target.closest("[data-stop]")) return; const r = e.target.closest(".row.item"); if (!r) return; const id = r.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); render(); });
-  const lvToggle = e => { const b = e.target.closest("[data-evo]"); if (b) { const id = b.dataset.evo; state.evoOpen.has(id) ? state.evoOpen.delete(id) : state.evoOpen.add(id); renderLive(); return; } const r = e.target.closest(".lnrow[data-id]"); if (!r) return; const id = r.dataset.id; live.open.has(id) ? live.open.delete(id) : live.open.add(id); renderLive(); };
+  $("#rows").addEventListener("click", e => { if (e.target.closest("[data-stop],a")) return; const r = e.target.closest(".row.item"); if (!r) return; const id = r.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); render(); });
+  const lvToggle = e => { if (e.target.closest("a")) return; const b = e.target.closest("[data-evo]"); if (b) { const id = b.dataset.evo; state.evoOpen.has(id) ? state.evoOpen.delete(id) : state.evoOpen.add(id); renderLive(); return; } const r = e.target.closest(".lnrow[data-id]"); if (!r) return; const id = r.dataset.id; live.open.has(id) ? live.open.delete(id) : live.open.add(id); renderLive(); };
   $("#lvList").addEventListener("click", lvToggle);
   $("#lvList").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { if (!e.target.matches(".lnrow")) return; e.preventDefault(); const id = e.target.dataset.id; lvToggle(e); document.querySelector(`#lvList .lnrow[data-id="${CSS.escape(id)}"]`)?.focus(); } });
   $("#lvq").addEventListener("input", renderLive);
