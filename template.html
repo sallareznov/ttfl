@@ -106,7 +106,6 @@ button.btn:disabled{opacity:.55;cursor:default}
 :root[data-view="live"] .deadline .dl-time{font-size:1.1rem}
 :root[data-view="live"] .deadline .dl-left{font-size:.95rem}
 :root[data-view="live"] .deadline .dl-note{display:none}
-:root[data-view="live"] #fresh{display:none}
 :root[data-view="live"] .wrap{gap:10px}
 :root[data-view="live"] .view{gap:8px}
 #lvq{flex:1 1 180px;padding:5px 10px}
@@ -197,6 +196,8 @@ svg.evo .ar{fill:var(--accent-soft)}
   .idetail{padding-left:0}
 }
 #fresh{text-align:right}
+/* the data timestamp only shows on the Injuries tab */
+:root:not([data-view="injuries"]) #fresh{display:none}
 .hright{display:grid;gap:6px;justify-items:end}
 .hright .ghost{font-size:.85rem}
 @media (max-width:640px){.hright{justify-items:start}}
@@ -1021,7 +1022,7 @@ function renderLiveStatus(){
   const d = live.doc, parts = [];
   if (live.busy) parts.push("Fetching box scores…");
   if (live.msg) parts.push(esc(live.msg) + (live.blocked ? ` <a href="${PAGES_URL}#live">Open it here</a>.` : ""));
-  if (d) parts.push(`${liveOn() ? `<span class="dot" aria-hidden="true"></span>` : ""}Updated <b>${esc(new Intl.DateTimeFormat(undefined, {timeZone: TZ, hour:"2-digit", minute:"2-digit", second:"2-digit", hourCycle:"h23"}).format(new Date(d.updated)))}</b>`);
+  if (d && liveOn()) parts.push(`<span class="dot" aria-hidden="true"></span>Live`);
   $("#lvStatus").className = "st" + (live.msg ? " err" : "");
   $("#lvStatus").innerHTML = parts.join(" · ");
   $("#lvRefresh").disabled = live.busy;
