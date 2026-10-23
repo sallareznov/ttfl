@@ -782,7 +782,7 @@ function render(){
       ${open ? detail(r) : ""}
     </div>`;
   });
-  $("#rows").innerHTML = rows.length ? capped("picks", html, q).join("") + moreRow("picks", html, q) : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
+  $("#rows").innerHTML = rows.length ? html.join("") : `<div class="empty">No players match. Clear the search or pick another game.</div>`;
 }
 
 function renderSlate(){
@@ -1026,7 +1026,7 @@ function renderLive(){
   const rows = liveRows(d).filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q));
   const started = d.games.some(g => g.state !== "pre");
   const tier = s => s >= 30 ? "t2" : s >= 20 ? "t3" : "";
-  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("live", rows, q).map((x, k) => {
+  $("#lvList").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + rows.map((x, k) => {
     const open = live.open.has(x.id), g = x.g;
     const gs = g.state === "in" ? `<span class="gs on">${esc(g.detail || "Live")}</span>` : g.state === "post" ? `<span class="gs">Final</span>` : `<span class="gs"></span>`;
     return `<div class="lrow lnrow lvrow${k === 0 && !q ? " top" : ""}" data-id="${esc(x.id)}" role="button" tabindex="0" aria-expanded="${open}">
@@ -1034,7 +1034,7 @@ function renderLive(){
     ${gs}<div class="tl">${logoImg(x.team)}</div>
     <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div>
     ${open ? scorecard(x.r, x.s, x.id, x.name, x.evo, null, $("#lvList")) : ""}</div>`;
-  }).join("") + moreRow("live", rows, q) : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
+  }).join("") : `<div class="empty">${q ? "No player matches that search." : started ? "No box scores yet." : `Scores show here once the first game tips off${d.games[0] ? ` at ${esc(parisClock(new Date(d.games[0].start)))}` : ""}.`}</div>`;
 }
 
 // ---- schedule ----
@@ -1447,7 +1447,7 @@ function showView(){
 }
 
 function init(){
-  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({picks: render, form: renderForm, live: renderLive})[b.dataset.more]?.(); });
+  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({form: renderForm})[b.dataset.more]?.(); });
   applyTheme();
   $("#themeBtn").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; try { localStorage.setItem("ttflTheme", theme); } catch (e) {} applyTheme(); });
   if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
