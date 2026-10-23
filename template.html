@@ -119,6 +119,9 @@ a.tileh .rows div:first-child .n{color:var(--accent)}
 .stand .top{color:var(--accent);font-weight:600}
 .home-link{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none}
 :root[data-view="home"] .home-link{display:none}
+.htimer{display:none;font-family:var(--display);font-weight:600;font-size:1.1rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.htimer b{color:var(--accent);font-variant-numeric:tabular-nums}
+:root[data-view="home"] .htimer{display:block}
 @media (min-width:641px){.home-link{display:none}}
 @media (max-width:640px){.home{gap:10px}a.tileh{min-height:118px;padding:10px 12px}a.tileh .lbl{font-size:1.05rem}a.tileh .stat>b{font-size:1.75rem}a.tileh .rows{font-size:.88rem}.stand{font-size:.86rem}}
 /* live page: no page title, compact deadline and controls */
@@ -526,6 +529,7 @@ details.method[open]>summary::after{content:" ▾"}
   <header>
     <div>
       <a class="home-link" href="#home">← Home</a>
+      <div class="htimer" id="homeTimer"></div>
       <div class="eyebrow" id="eyebrow">TTFL</div>
     </div>
     <div class="hright"><div class="small muted" id="fresh"></div><button class="ghost" type="button" id="themeBtn"></button></div>
@@ -1420,12 +1424,18 @@ function standings(){
   return [side(true), side(false)];
 }
 const teamShort = t => { const n = (DATA.teamNames || {})[t] || t; return n.endsWith("Trail Blazers") ? "Trail Blazers" : n.split(" ").pop(); };
+// home header: live countdown to the pick deadline
+function renderHomeTimer(){
+  const d = deadlineInfo(), el = $("#homeTimer");
+  if (!d) { el.textContent = ""; return; }
+  const ms = d.when - Date.now(), two = n => String(n).padStart(2, "0");
+  el.innerHTML = ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)}:${two(Math.floor(ms % 36e5 / 6e4))}:${two(Math.floor(ms % 6e4 / 1e3))}</b>`;
+}
 function renderHome(){
   startLive();
   const tile = (href, k, label, body, cls = "") => `<a class="tileh ${cls}" href="#${href}"><div class="th">${icon(k)}<span class="lbl">${label}</span><span class="go" aria-hidden="true">›</span></div>${body}</a>`;
   const stat = (big, txt) => `<div class="stat"><b>${big}</b><span class="val">${txt}</span></div>`;
-  const d = deadlineInfo(), ms = d ? d.when - Date.now() : 0;
-  const left = !d ? "" : ms <= 0 ? "Picks closed" : `Picks close in <b>${Math.floor(ms / 36e5)} h ${String(Math.floor(ms % 36e5 / 6e4)).padStart(2, "0")}</b>`;
+  const d = deadlineInfo();
   const form = Object.values(DATA.recent || {}).filter(e => e.rows.length).map(e => ({n: e.name, a: mean(e.rows, ttfl)})).sort((a, b) => b.a - a.a).slice(0, 5);
   const nt = nextTeams(), inj = (DATA.injuryList || []).filter(i => nt.has(i.team));
   const out = inj.filter(i => injuryInfo(i).cls === "out").length;
@@ -1435,7 +1445,7 @@ function renderHome(){
   const liveTop = live.doc && live.doc.games.some(g => g.state !== "pre") ? liveRows(live.doc).slice(0, 5) : [];
   const [west, east] = standings();
   $("#view-home").innerHTML = `
-    ${tile("picks", "tonight", "Tonight", DATA.games.length ? `<div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${left ? " · " + left : ""}</span>` : stat(0, "games"))}
+    ${tile("picks", "tonight", "Tonight", DATA.games.length ? `<div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}</span>` : stat(0, "games"))}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
     ${tile("form", "form", "Averages", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
@@ -1517,6 +1527,7 @@ function init(){
   $("#tpick").addEventListener("click", e => { const b = e.target.closest("[data-team]"); if (!b) return; state.team = b.dataset.team; $("#rq").value = ""; renderRosters(); });
   $("#iNextLabel").textContent = d.toLocaleDateString(undefined, {weekday:"long"});
   renderDeadline(); setInterval(renderDeadline, 30000);
+  renderHomeTimer(); setInterval(() => { if (!$("#view-home").hidden) renderHomeTimer(); }, 1000);
   window.addEventListener("hashchange", showView);
   showView();
 }
