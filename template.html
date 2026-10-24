@@ -1593,7 +1593,7 @@ function renderHomeTimer(){
   const d = deadlineInfo(), el = $("#homeTimer");
   if (!d) { el.textContent = ""; return; }
   const ms = d.when - Date.now(), two = n => String(n).padStart(2, "0");
-  el.innerHTML = ms <= 0 ? `Deadline passed (${parisClock(new Date(d.when))})` : `Deadline in <b>${Math.floor(ms / 36e5)}:${two(Math.floor(ms % 36e5 / 6e4))}:${two(Math.floor(ms % 6e4 / 1e3))}</b>`;
+  el.innerHTML = ms <= 0 ? `Deadline passed (${parisClock(new Date(d.when))})` : `Deadline in <b>${Math.floor(ms / 36e5)}:${two(Math.floor(ms % 36e5 / 6e4))}:${two(Math.floor(ms % 6e4 / 1e3))}</b> (${parisClock(new Date(d.when))})`;
 }
 function renderHome(){
   startLive();
@@ -1717,6 +1717,17 @@ function init(){
   $("#iNextLabel").textContent = d.toLocaleDateString(undefined, {weekday:"long"});
   renderHomeTimer(); setInterval(() => { if (!$("#view-home").hidden) renderHomeTimer(); }, 1000);
   window.addEventListener("hashchange", showView);
+  // GitHub Pages copy (also the home screen app): when you come back to it, reload if a newer build was deployed.
+  // A HEAD request only compares the page's ETag, so nothing is downloaded unless there is an update.
+  if (location.hostname.endsWith("github.io")) {
+    const page = location.href.split("#")[0], tag = async () => { try { const r = await fetch(page, {method:"HEAD", cache:"no-store"}); return r.ok ? r.headers.get("etag") || r.headers.get("last-modified") : null; } catch (e) { return null; } };
+    let mine = null, hiddenAt = 0; tag().then(t => mine = t);
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "hidden") { hiddenAt = Date.now(); return; }
+      if (!mine || Date.now() - hiddenAt < 60000) return;
+      const t = await tag(); if (t && t !== mine) location.reload();
+    });
+  }
   showView();
 }
 init();
