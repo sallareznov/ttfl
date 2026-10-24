@@ -1593,7 +1593,7 @@ function renderHomeTimer(){
   const d = deadlineInfo(), el = $("#homeTimer");
   if (!d) { el.textContent = ""; return; }
   const ms = d.when - Date.now(), two = n => String(n).padStart(2, "0");
-  el.innerHTML = ms <= 0 ? `Deadline passed (${parisClock(new Date(d.when))})` : `Deadline in <b>${Math.floor(ms / 36e5)}:${two(Math.floor(ms % 36e5 / 6e4))}:${two(Math.floor(ms % 6e4 / 1e3))}</b> (${parisClock(new Date(d.when))})`;
+  el.innerHTML = ms <= 0 ? `Deadline passed (${parisClock(new Date(d.when))})` : `Deadline at ${parisClock(new Date(d.when))} (<b>${Math.floor(ms / 36e5)}:${two(Math.floor(ms % 36e5 / 6e4))}:${two(Math.floor(ms % 6e4 / 1e3))}</b>)`;
 }
 function renderHome(){
   startLive();
