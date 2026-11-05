@@ -592,9 +592,8 @@ details.method[open]>summary::after{content:" ▾"}
     <a href="#injuries" data-view="injuries">Injury report</a>
     <a href="#tonight" data-view="tonight">Tonight</a>
     <a href="#live" data-view="live">Live</a>
-    <a href="#lastnight" data-view="lastnight">Last night</a>
+    <a href="#games" data-view="games">Games</a>
     <a href="#players" data-view="players">Players</a>
-    <a href="#schedule" data-view="schedule">Schedule</a>
     <a href="#teams" data-view="teams">Teams</a>
     <a href="#standings" data-view="standings">Standings</a>
   </nav>
@@ -658,24 +657,19 @@ details.method[open]>summary::after{content:" ▾"}
     <div class="list" id="lvList"></div>
   </div>
 
-  <div class="view" id="view-lastnight" hidden>
-    <div class="daytabs" id="rDays" role="group" aria-label="Nights"></div>
-    <section class="sday" id="rGames"></section>
-    <h2 id="rTopTitle">Top TTFL scores</h2>
+  <div class="view" id="view-games" hidden>
     <div class="controls">
-      <input type="search" id="rq2" placeholder="Search player or team" aria-label="Search last night's players">
+      <select id="gTeam" aria-label="Filter by team"><option value="">All teams</option></select>
+      <span class="small muted">US nights, Paris tip-off times</span>
     </div>
-    <div class="list" id="rTop"></div>
-    <p class="small muted">Tap a game for its box score and play-by-play, a player for his game. Final scores and box scores from ESPN.</p>
-  </div>
-
-  <div class="view" id="view-schedule" hidden>
-    <div class="controls">
-      <select id="sTeam" aria-label="Filter by team"><option value="">All teams</option></select>
-      <span class="small muted" id="sNote"></span>
+    <div class="daytabs" id="gDays" role="group" aria-label="Days"></div>
+    <div class="injwrap" id="gList"></div>
+    <h2 id="gTopTitle">Top TTFL scores</h2>
+    <div class="controls" id="gTopCtl">
+      <input type="search" id="gq" placeholder="Search player or team" aria-label="Search this night's players">
     </div>
-    <div class="daytabs" id="sDays" role="group" aria-label="Days"></div>
-    <div class="injwrap" id="schedList"></div>
+    <div class="list" id="gTop"></div>
+    <p class="small muted">Tap a finished game for its box score, highlights and play-by-play, an upcoming one for its preview. Scores and schedule from ESPN.</p>
   </div>
 
   <div class="view" id="view-teams" hidden>
@@ -698,7 +692,7 @@ details.method[open]>summary::after{content:" ▾"}
   </div>
 
   <div class="view" id="view-preview" hidden>
-    <a class="back" href="#schedule" id="prBack">← Schedule</a>
+    <a class="back" href="#games" id="prBack">← Games</a>
     <div class="view" id="previewBody"></div>
   </div>
 
@@ -1193,23 +1187,6 @@ function schedGame(g){
   return `<${tag} class="sgame ${open || pre ? "glink" : ""}" ${open ? `href="#game-${esc(g.id)}" title="Box score and play-by-play"` : pre ? `href="#preview-${esc(g.id)}" title="Game preview"` : ""}>${side(g.away, g.awayRec, g.awayScore, hw)}${side(g.home, g.homeRec, g.homeScore, aw)}
     <div class="meta"><span>${when}</span>${g.tv && g.tv.length ? `<span>${esc(g.tv.join(", "))}</span>` : ""}${!done && !live && g.odds ? `<span>${esc(g.odds)}</span>` : ""}${g.venue ? `<span>${esc(g.venue)}</span>` : ""}${open ? `<span class="more">Box score →</span>` : pre ? `<span class="more">Preview →</span>` : ""}</div></${tag}>`;
 }
-function renderSchedule(){
-  const team = $("#sTeam").value, days = DATA.schedule || [];
-  let total = 0;
-  if (!state.sday || !days.some(d => d.date === state.sday)) state.sday = (days.find(d => d.date === DATA.date) || days.find(d => d.games.length) || days[0] || {}).date;
-  $("#sDays").hidden = !!team;
-  $("#sDays").innerHTML = days.map(d => `<button type="button" data-sday="${esc(d.date)}" aria-pressed="${state.sday === d.date}">${esc(new Date(d.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"}))}<span>${d.games.length || "–"}</span></button>`).join("");
-  const html = days.filter(d => team || d.date === state.sday).map(d => {
-    const gs = d.games.filter(g => !team || g.home === team || g.away === team).sort((a, b) => a.time < b.time ? -1 : 1);
-    total += gs.length;
-    if (!gs.length) return team ? "" : `<section class="sday"><h2>${fmtLong(d.date)} <span class="small muted">No games</span></h2></section>`;
-    const tonight = d.date === DATA.date;
-    return `<section class="sday"><h2>${fmtLong(d.date)}${tonight ? ` <span class="tag">Next TTFL night</span>` : ""} <span class="small muted">${team ? "" : `${gs.length} game${gs.length === 1 ? "" : "s"}`}</span></h2>
-      <div class="sched">${gs.map(schedGame).join("")}</div></section>`;
-  }).join("");
-  $("#schedList").innerHTML = html || `<div class="empty">No games scheduled in the next two weeks.</div>`;
-  $("#sNote").textContent = days.length ? `${team ? `${total} ${team} game${total === 1 ? "" : "s"}` : `${total} games`} from ${fmtDay(days[0].date)} to ${fmtDay(days[days.length - 1].date)} · US night, Paris tip-off times` : "";
-}
 
 // ---- rosters ----
 function renderRosters(){
@@ -1647,16 +1624,16 @@ function renderHome(){
   const best = DATA.games.length ? bestTop(projectAll(), 5) : [];
   const gamesHtml = `<div><div class="bh">Games</div><div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div></div>`;
   const bestHtml = best.length ? `<div><div class="bh">Highest projected pick</div><div class="rows">${best.map(r => `<div><span class="bn"><i>${esc(initialName(r.p.name))}</i><span class="opp">${r.home ? "vs" : "@"} ${esc(r.opp)}</span></span><span class="n">${f1(Math.max(r.exp, 0))}</span></div>`).join("")}</div></div>` : "";
-  const ln = nights()[0];
+  const lnd = lastNightDate(), ln = nights().find(n => n.date === lnd);
   const lnTop = ln ? nightScores(ln).slice(0, 5) : [];
-  const lnHtml = ln ? tile("lastnight", "lastnight", "Last night", `<div class="tonh"><div><div class="bh">Scores</div><div class="rows plain">${ln.games.slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(g.score[0])}-${esc(g.score[1])}</span></div>`).join("")}</div></div><div><div class="bh">Top TTFL</div><div class="rows">${lnTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div></div></div><span class="val foot">${ln.games.length} game${ln.games.length === 1 ? "" : "s"} · ${esc(fmtDay(ln.date))}</span>`, "wide") : "";
+  const lnHtml = ln ? tile("games-" + ln.date, "lastnight", "Last night", `<div class="tonh"><div><div class="bh">Scores</div><div class="rows plain">${ln.games.slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(g.score[0])}-${esc(g.score[1])}</span></div>`).join("")}</div></div><div><div class="bh">Top TTFL</div><div class="rows">${lnTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div></div></div><span class="val foot">${ln.games.length} game${ln.games.length === 1 ? "" : "s"} · ${esc(fmtDay(ln.date))}</span>`, "wide") : "";
   $("#view-home").innerHTML = `
     ${tile("tonight", "tonight", "Tonight", DATA.games.length ? `<div class="tonh">${gamesHtml}${bestHtml}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${best.length ? " · projected TTFL score" : ""}</span>` : stat(0, "games"), "wide")}
     ${lnHtml}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
     ${tile("players", "form", "Players", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
-    ${tile("schedule", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
+    ${tile(next ? "games-" + next.date : "games", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
     ${tile("teams", "rosters", "Teams", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
     ${tile("standings", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(x.t)}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`)}`;
 }
@@ -1674,32 +1651,70 @@ function nightScores(n){
     out.push({id: p[1], name: p[2], team, opp, home: !!side, min: p[4], s: ttfl(boxRow(p)), gid: g.id, starter: p[3]}); }));
   return out.sort((a, b) => b.s - a.s || b.min - a.min);
 }
-function renderLastNight(){
-  const N = nights(), el = $("#rGames");
-  if (!N.length) { $("#rDays").innerHTML = ""; el.innerHTML = `<div class="empty">No ${esc(DATA.season)} games have been played yet.</div>`; $("#rTop").innerHTML = ""; $("#rTopTitle").hidden = true; return; }
-  if (!state.rday || !N.some(n => n.date === state.rday)) state.rday = N[0].date;
-  const n = N.find(x => x.date === state.rday), latest = n === N[0];
-  $("#rDays").innerHTML = N.map((x, k) => `<button type="button" data-rday="${esc(x.date)}" aria-pressed="${x.date === state.rday}">${k ? esc(new Date(x.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"})) : "Last night"}<span>${x.games.length}</span></button>`).join("");
-  const scores = nightScores(n), topBy = {};
-  scores.forEach(x => { if (!topBy[x.gid]) topBy[x.gid] = x; });
-  const pending = latest ? ((DATA.schedule || []).find(d => d.date === n.date)?.games || []).filter(g => !(DATA.gamePages || {})[g.id]).length : 0;
-  const card = g => {
-    const sc = g.score.map(Number), ot = g.lines[0].length - 4, t = topBy[g.id];
-    const side = i => `<div class="line ${sc[i] < sc[1 - i] ? "loss" : ""}">${logoImg(i ? g.home : g.away)}${esc(i ? g.home : g.away)}<span class="pts">${esc(g.score[i])}</span></div>`;
-    return `<a class="sgame glink" href="#game-${esc(g.id)}" title="Box score and play-by-play">${side(0)}${side(1)}
-      <div class="meta"><span><b>Final</b>${ot > 0 ? ` ${ot > 1 ? ot : ""}OT` : ""}</span><span class="more">Box score →</span></div>${t ? `<div class="ltop">Top TTFL: ${esc(initialName(t.name))} <b>${t.s}</b></div>` : ""}</a>`;
+// ---- games: one strip of dates, finished nights (results and TTFL ranking) through the next two weeks (schedule) ----
+function gameDays(){
+  const by = {};
+  nights().forEach(n => by[n.date] = {date: n.date, done: n.games, sched: null});
+  (DATA.schedule || []).forEach(d => { (by[d.date] = by[d.date] || {date: d.date, done: []}).sched = d.games.slice().sort((a, b) => a.time < b.time ? -1 : 1); });
+  return Object.values(by).sort((a, b) => a.date < b.date ? -1 : 1);
+}
+function lastNightDate(){ const N = nights(), n = N.find(x => x.date < DATA.date) || N[0]; return n && n.date; }
+function resultCard(g, top){
+  const sc = g.score.map(Number), ot = g.lines[0].length - 4;
+  const side = i => `<div class="line ${sc[i] < sc[1 - i] ? "loss" : ""}">${logoImg(i ? g.home : g.away)}${esc(i ? g.home : g.away)}<span class="pts">${esc(g.score[i])}</span></div>`;
+  return `<a class="sgame glink" href="#game-${esc(g.id)}" title="Box score, highlights and play-by-play">${side(0)}${side(1)}
+    <div class="meta"><span><b>Final</b>${ot > 0 ? ` ${ot > 1 ? ot : ""}OT` : ""}</span><span class="more">Box score →</span></div>${top ? `<div class="ltop">Top TTFL: ${esc(initialName(top.name))} <b>${top.s}</b></div>` : ""}</a>`;
+}
+function renderGames(){
+  const D = gameDays(), GP = DATA.gamePages || {}, team = $("#gTeam").value, ln = lastNightDate();
+  const hideTop = () => { $("#gTopTitle").hidden = $("#gTopCtl").hidden = true; $("#gTop").innerHTML = ""; };
+  if (!D.length) { $("#gDays").innerHTML = ""; $("#gList").innerHTML = `<div class="empty">No games yet.</div>`; hideTop(); return; }
+  if (!state.gday || !D.some(d => d.date === state.gday)) {
+    // last night until tonight's first game starts, then tonight
+    const tonight = (DATA.schedule || []).find(d => d.date === DATA.date), started = tonight && tonight.games.some(g => g.state !== "pre");
+    state.gday = started || !ln ? (tonight ? DATA.date : D[D.length - 1].date) : ln;
+  }
+  // a day's cards: finished games with a box score as results, the rest as schedule cards
+  const dayCards = (d, games) => {
+    const topBy = {};
+    nightScores({games: d.done.filter(g => games.some(x => x.id === g.id))}).forEach(x => { if (!topBy[x.gid]) topBy[x.gid] = x; });
+    return games.map(g => GP[g.id] ? resultCard({id: g.id, ...GP[g.id]}, topBy[g.id]) : schedGame(g)).join("");
   };
-  el.innerHTML = `<h2>${fmtLong(n.date)} <span class="small muted">${n.games.length} game${n.games.length === 1 ? "" : "s"}${pending ? ` · ${pending} more still to finish` : ""}</span></h2>
-    <div class="sched">${n.games.map(card).join("")}</div>`;
-  const q = norm($("#rq2").value || ""), R = ROSTER_BY_ID();
+  const label = d => d.date === DATA.date ? "Tonight" : d.date === ln ? "Last night" : new Date(d.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"});
+  const count = d => (d.sched || d.done).length;
+  const tag = d => d.date === DATA.date ? ` <span class="tag">Next TTFL night</span>` : "";
+  const gd = $("#gDays");
+  gd.hidden = !!team;
+  if (team) {
+    const html = D.map(d => {
+      const gs = (d.sched || d.done).filter(g => g.home === team || g.away === team);
+      return gs.length ? `<section class="sday"><h2>${fmtLong(d.date)}${tag(d)}</h2><div class="sched">${dayCards(d, gs)}</div></section>` : "";
+    }).join("");
+    $("#gList").innerHTML = html || `<div class="empty">No ${esc(team)} games.</div>`;
+    hideTop();
+    return;
+  }
+  // oldest day on the left; keep the picked day in view
+  gd.innerHTML = D.map(d => `<button type="button" data-gday="${esc(d.date)}" aria-pressed="${d.date === state.gday}">${esc(label(d))}<span>${count(d) || "–"}</span></button>`).join("");
+  requestAnimationFrame(() => { const sel = gd.querySelector('[aria-pressed="true"]'); if (!sel) return;
+    const r = sel.getBoundingClientRect(), c = gd.getBoundingClientRect();
+    if (r.left < c.left || r.right > c.right) gd.scrollLeft += (r.left + r.width / 2) - (c.left + c.width / 2); });
+  const d = D.find(x => x.date === state.gday), n = count(d);
+  const pending = d.done.length && d.sched ? d.sched.filter(g => !GP[g.id]).length : 0;
+  $("#gList").innerHTML = `<section class="sday"><h2>${fmtLong(d.date)}${tag(d)} <span class="small muted">${n ? `${n} game${n === 1 ? "" : "s"}` : "No games"}${pending ? ` · ${pending} still to finish` : ""}</span></h2>
+    ${n ? `<div class="sched">${dayCards(d, d.sched || d.done)}</div>` : ""}</section>`;
+  // TTFL ranking of the day's finished games
+  const scores = nightScores({games: d.done});
+  if (!scores.length) { hideTop(); return; }
+  $("#gTopTitle").hidden = $("#gTopCtl").hidden = false;
+  const q = norm($("#gq").value || ""), R = ROSTER_BY_ID();
   const rows = scores.filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q));
   const tier = s => s >= 30 ? "t2" : s >= 20 ? "t3" : "";
-  $("#rTopTitle").hidden = false;
-  $("#rTop").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("rtop", rows, q).map((x, k) => `<div class="lrow lvrow golink ${k === 0 && !q ? "top" : ""}" data-gid="${esc(x.gid)}" role="link" tabindex="0">
+  $("#gTop").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("gtop", rows, q).map((x, k) => `<div class="lrow lvrow golink ${k === 0 && !q ? "top" : ""}" data-gid="${esc(x.gid)}" role="link" tabindex="0">
       <div style="min-width:0">${R[x.id] ? `<a class="plink name" href="#player-${esc(x.id)}">${esc(x.name)}</a>` : `<div class="name">${esc(x.name)}</div>`}<div class="sub">${esc(x.team)} ${x.home ? "vs" : "@"} ${esc(x.opp)} · ${Math.round(x.min)} min</div></div>
       <div class="gs"></div><div class="tl">${logoImg(x.team)}</div>
-      <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div></div>`).join("") + moreRow("rtop", rows, q)
-    : `<div class="empty">${q ? "No player matches that search." : "No box scores for this night."}</div>`;
+      <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div></div>`).join("") + moreRow("gtop", rows, q)
+    : `<div class="empty">No player matches that search.</div>`;
 }
 
 function renderStandings(){
@@ -1713,14 +1728,15 @@ function renderStandings(){
   const [west, east] = standings(15);
   $("#standList").innerHTML = west.length || east.length ? conf("West", west) + conf("East", east) : `<div class="empty">No records yet.</div>`;
 }
-const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, lastnight: renderLastNight, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, preview: renderPreview, player: renderPlayer, game: renderGame};
+const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, games: renderGames, injuries: renderInjuries, players: renderForm, teams: renderRosters, preview: renderPreview, player: renderPlayer, game: renderGame};
 let lastView = "teams", prevHash = "", curView = null;
 const toTop = () => window.scrollTo(0, 0);
 function showView(){
   let v = (location.hash || "").slice(1);
-  const moved = {form: "players", rosters: "teams", picks: "tonight"}[v]; // old links
+  const moved = {form: "players", rosters: "teams", picks: "tonight", lastnight: "games", schedule: "games"}[v]; // old links
   if (moved) { history.replaceState(null, "", "#" + moved); v = moved; }
-  if (v.startsWith("player-")) {
+  if (v.startsWith("games-")) { state.gday = v.slice(6); delete shown.gtop; $("#gTeam").value = ""; v = "games"; }
+  else if (v.startsWith("player-")) {
     const pid = v.slice(7);
     if (state.pid !== pid) { state.pid = pid; state.ps = {type:"all", game:null, zone:null, shot:null, tab:"log", vsTeam:null, vsPlayer:null, scope:"all", logSeason:"cur"}; }
     $("#pBack").href = "#" + lastView; $("#pBack").textContent = "← " + ($(`nav.menu a[data-view="${lastView}"]`)?.textContent || "Back");
@@ -1728,15 +1744,15 @@ function showView(){
   } else if (v.startsWith("preview-")) {
     state.prid = v.slice(8);
     if (prevHash && !/^#(player|game|preview)-/.test(prevHash)) state.prBack = prevHash;
-    const back = state.prBack || "#schedule";
-    $("#prBack").href = back; $("#prBack").textContent = "← " + ($(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
+    const back = state.prBack || "#games";
+    $("#prBack").href = back; $("#prBack").textContent = "← " + ($(`nav.menu a[data-view="${back.slice(1).replace(/-.*/, "")}"]`)?.textContent || "Back");
     v = "preview"; toTop();
   } else if (v.startsWith("game-")) {
     const gid = v.slice(5);
     if (state.gid !== gid) { state.gid = gid; state.gs = {period:"1", scoring:false, tab:null}; }
     const back = prevHash && !prevHash.startsWith("#game-") ? prevHash : "#" + lastView;
     if (state.gs.tab == null) state.gs.fromPid = back.startsWith("#player-") ? back.slice(8) : null;
-    $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
+    $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1).replace(/-.*/, "")}"]`)?.textContent || "Back");
     v = "game"; toTop();
   } else if (!(v in VIEWS)) v = "home";
   if (v !== "player" && v !== "game" && v !== "preview") lastView = v;
@@ -1750,7 +1766,7 @@ function showView(){
 }
 
 function init(){
-  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({form: renderForm, rtop: renderLastNight})[b.dataset.more]?.(); });
+  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({form: renderForm, gtop: renderGames})[b.dataset.more]?.(); });
   applyTheme();
   $("#themeBtn").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; try { localStorage.setItem("ttflTheme", theme); } catch (e) {} applyTheme(); });
   if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
@@ -1774,14 +1790,13 @@ function init(){
   ["#iq", "#iNext"].forEach(s => $(s).addEventListener("input", renderInjuries));
   ["#fq", "#fNext"].forEach(s => $(s).addEventListener("input", renderForm));
   const tn = DATA.teamNames || {};
-  $("#sTeam").insertAdjacentHTML("beforeend", Object.keys(DATA.rosters || tn).sort().map(t => `<option value="${esc(t)}">${esc(tn[t] || t)}</option>`).join(""));
-  $("#sTeam").addEventListener("input", renderSchedule);
-  $("#sDays").addEventListener("click", e => { const b = e.target.closest("[data-sday]"); if (!b) return; state.sday = b.dataset.sday; renderSchedule(); });
+  $("#gTeam").insertAdjacentHTML("beforeend", Object.keys(DATA.rosters || tn).sort().map(t => `<option value="${esc(t)}">${esc(tn[t] || t)}</option>`).join(""));
+  $("#gTeam").addEventListener("input", renderGames);
   $("#rq").addEventListener("input", renderRosters);
-  $("#rDays").addEventListener("click", e => { const b = e.target.closest("[data-rday]"); if (!b) return; state.rday = b.dataset.rday; delete shown.rtop; renderLastNight(); });
-  $("#rq2").addEventListener("input", renderLastNight);
+  $("#gDays").addEventListener("click", e => { const b = e.target.closest("[data-gday]"); if (!b) return; state.gday = b.dataset.gday; delete shown.gtop; history.replaceState(null, "", "#games-" + state.gday); prevHash = location.hash; renderGames(); });
+  $("#gq").addEventListener("input", renderGames);
   const rGo = e => { if (e.target.closest("a")) return; const r = e.target.closest(".golink[data-gid]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; location.hash = "game-" + r.dataset.gid; };
-  $("#rTop").addEventListener("click", rGo); $("#rTop").addEventListener("keydown", rGo);
+  $("#gTop").addEventListener("click", rGo); $("#gTop").addEventListener("keydown", rGo);
   const standGo = e => { const r = e.target.closest("[data-team]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; state.team = r.dataset.team; $("#rq").value = ""; location.hash = "teams"; };
   $("#standList").addEventListener("click", standGo); $("#standList").addEventListener("keydown", standGo);
   const pvGo = e => { const r = e.target.closest(".golink[data-pid]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; location.hash = "player-" + r.dataset.pid; };
