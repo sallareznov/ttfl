@@ -348,6 +348,10 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sgame .meta{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px;border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
 .sgame .meta b{color:var(--ink);font-weight:600}
 .sgame .meta .live{color:var(--bad);font-weight:600}
+.sgame .ltop{font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgame .ltop b{color:var(--accent);font-family:var(--display);font-size:1.05rem}
+a.tileh .rows.plain div:first-child .n{color:inherit}
+.lvrow.golink:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* rosters */
 .tpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px}
 .tpick button{font:inherit;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.03em;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 4px;display:grid;justify-items:center;gap:2px;cursor:pointer}
@@ -492,6 +496,14 @@ table.stats td .sh{display:none}
   .stiles{gap:5px}.stile{padding:5px}.stile span{font-size:.68rem}
 }
 table.pbp tr.sc td.tx{font-weight:600}
+.cliplist{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.clip{flex:0 0 200px;display:grid;gap:4px;text-align:left;font:inherit;font-size:.85rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.clip[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.clip .ct{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.clip .cd{font-size:.75rem;color:var(--accent);font-weight:600}
+.clipplay{display:grid;gap:6px}
+.clipplay video{width:100%;max-height:60vh;aspect-ratio:16/9;background:#000;border-radius:8px}
+.clipplay a{color:var(--accent)}
 table.pbp .chip{margin-left:4px}
 table.pbp td.tm{text-align:left}
 .ptabs button{min-width:0}
@@ -580,6 +592,7 @@ details.method[open]>summary::after{content:" ▾"}
     <a href="#injuries" data-view="injuries">Injury report</a>
     <a href="#tonight" data-view="tonight">Tonight</a>
     <a href="#live" data-view="live">Live</a>
+    <a href="#lastnight" data-view="lastnight">Last night</a>
     <a href="#players" data-view="players">Players</a>
     <a href="#schedule" data-view="schedule">Schedule</a>
     <a href="#teams" data-view="teams">Teams</a>
@@ -643,6 +656,17 @@ details.method[open]>summary::after{content:" ▾"}
       <span class="st" id="lvStatus" role="status" aria-live="polite"></span>
     </div>
     <div class="list" id="lvList"></div>
+  </div>
+
+  <div class="view" id="view-lastnight" hidden>
+    <div class="daytabs" id="rDays" role="group" aria-label="Nights"></div>
+    <section class="sday" id="rGames"></section>
+    <h2 id="rTopTitle">Top TTFL scores</h2>
+    <div class="controls">
+      <input type="search" id="rq2" placeholder="Search player or team" aria-label="Search last night's players">
+    </div>
+    <div class="list" id="rTop"></div>
+    <p class="small muted">Tap a game for its box score and play-by-play, a player for his game. Final scores and box scores from ESPN.</p>
   </div>
 
   <div class="view" id="view-schedule" hidden>
@@ -1509,6 +1533,16 @@ function renderPreview(){
     <section class="card"><h3>Matchup</h3>${matchup}</section>
     <section class="card"><h3>Previous meetings</h3>${mt}</section>`;
 }
+// ESPN's clips for a game: a row of titles, the picked one plays inline (with a link to espn.com where the video can't load)
+function clips(G, gs){
+  const V = G.v || [];
+  if (!V.length) return "";
+  const k = gs.clip, c = V[k], dur = n => n ? `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}` : "";
+  const player = c ? `<div class="clipplay"><video controls autoplay playsinline preload="metadata" ${c[2] ? `poster="${esc(c[2])}"` : ""} src="${esc(c[3] || "")}"></video>
+    <div class="small"><b>${esc(c[0])}</b>${c[4] ? ` · <a href="${esc(c[4])}" target="_blank" rel="noopener">Watch on ESPN ↗</a>` : ""}</div></div>` : "";
+  return `<section class="card"><div class="bar"><h3>Highlights</h3><span class="small muted">${V.length} clip${V.length === 1 ? "" : "s"} from ESPN</span></div>${player}
+    <div class="cliplist">${V.map((v, i) => `<button type="button" class="clip" data-clip="${i}" aria-pressed="${i === k}"><span class="ct">${esc(v[0].replace(/^.*?: Game Highlights$/, "Game highlights"))}</span><span class="cd">▶ ${dur(v[1])}</span></button>`).join("")}</div></section>`;
+}
 function renderGame(){
   const G = (DATA.gamePages || {})[state.gid], el = $("#gameBody"), gs = state.gs;
   if (!G) { el.innerHTML = `<div class="empty">This game isn't available. Box scores cover ${DATA.season} games only.</div>`; return; }
@@ -1547,6 +1581,7 @@ function renderGame(){
   }
   el.innerHTML = `<div class="ghead">${team(0)}<span class="muted">@</span>${team(1)}<div class="gmeta">${new Date(G.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric", month:"short", year:"numeric"})} · Final</div></div>
     <section class="card">${lines}</section>
+    ${clips(G, gs)}
     <div class="seg ptabs tabs4" role="group" aria-label="Game">${[["0", sides[0] + " box"], ["1", sides[1] + " box"], ["stats", "Team stats"], ["pbp", "Plays"]].map(([k, l]) => `<button type="button" data-gtab="${k}" aria-pressed="${gs.tab === k}">${esc(l)}</button>`).join("")}</div>
     ${gs.tab === "0" ? box(0) : gs.tab === "1" ? box(1) : gs.tab === "stats" ? tstats : pbp}`;
 }
@@ -1575,6 +1610,7 @@ const ICONS = {
   form: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
   schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   rosters: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',
+  lastnight: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   standings: '<path d="M4 20V13h4v7M10 20V8h4v12M16 20v-5h4v5M12 3l1 2 2 .3-1.5 1.4.4 2.1-1.9-1-1.9 1 .4-2.1L9 5.3l2-.3z"/>'};
 const icon = k => `<span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg></span>`;
 const initialName = n => { const p = n.split(" "); return p.length > 1 ? p[0][0] + ". " + p.slice(1).join(" ") : n; };
@@ -1611,14 +1647,59 @@ function renderHome(){
   const best = DATA.games.length ? bestTop(projectAll(), 5) : [];
   const gamesHtml = `<div><div class="bh">Games</div><div class="rows">${DATA.games.slice().sort((a, b) => a.time < b.time ? -1 : 1).slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(parisClock(new Date(g.time)))}</span></div>`).join("")}</div></div>`;
   const bestHtml = best.length ? `<div><div class="bh">Highest projected pick</div><div class="rows">${best.map(r => `<div><span class="bn"><i>${esc(initialName(r.p.name))}</i><span class="opp">${r.home ? "vs" : "@"} ${esc(r.opp)}</span></span><span class="n">${f1(Math.max(r.exp, 0))}</span></div>`).join("")}</div></div>` : "";
+  const ln = nights()[0];
+  const lnTop = ln ? nightScores(ln).slice(0, 5) : [];
+  const lnHtml = ln ? tile("lastnight", "lastnight", "Last night", `<div class="tonh"><div><div class="bh">Scores</div><div class="rows plain">${ln.games.slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(g.score[0])}-${esc(g.score[1])}</span></div>`).join("")}</div></div><div><div class="bh">Top TTFL</div><div class="rows">${lnTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div></div></div><span class="val foot">${ln.games.length} game${ln.games.length === 1 ? "" : "s"} · ${esc(fmtDay(ln.date))}</span>`, "wide") : "";
   $("#view-home").innerHTML = `
     ${tile("tonight", "tonight", "Tonight", DATA.games.length ? `<div class="tonh">${gamesHtml}${bestHtml}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${best.length ? " · projected TTFL score" : ""}</span>` : stat(0, "games"), "wide")}
+    ${lnHtml}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
     ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
     ${tile("players", "form", "Players", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
     ${tile("schedule", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
     ${tile("teams", "rosters", "Teams", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
     ${tile("standings", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(x.t)}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`)}`;
+}
+
+// ---- last night: every finished game of a night, browsable back through the season ----
+function nights(){
+  const by = {};
+  Object.entries(DATA.gamePages || {}).forEach(([id, g]) => (by[g.date] = by[g.date] || []).push({id, ...g}));
+  return Object.keys(by).sort().reverse().map(date => ({date, games: by[date].sort((a, b) => a.id < b.id ? -1 : 1)}));
+}
+// every player who played in a night's games, best TTFL score first
+function nightScores(n){
+  const out = [];
+  n.games.forEach(g => g.p.forEach(p => { if (p.length <= 5) return; const side = p[0], team = side ? g.home : g.away, opp = side ? g.away : g.home;
+    out.push({id: p[1], name: p[2], team, opp, home: !!side, min: p[4], s: ttfl(boxRow(p)), gid: g.id, starter: p[3]}); }));
+  return out.sort((a, b) => b.s - a.s || b.min - a.min);
+}
+function renderLastNight(){
+  const N = nights(), el = $("#rGames");
+  if (!N.length) { $("#rDays").innerHTML = ""; el.innerHTML = `<div class="empty">No ${esc(DATA.season)} games have been played yet.</div>`; $("#rTop").innerHTML = ""; $("#rTopTitle").hidden = true; return; }
+  if (!state.rday || !N.some(n => n.date === state.rday)) state.rday = N[0].date;
+  const n = N.find(x => x.date === state.rday), latest = n === N[0];
+  $("#rDays").innerHTML = N.map((x, k) => `<button type="button" data-rday="${esc(x.date)}" aria-pressed="${x.date === state.rday}">${k ? esc(new Date(x.date + "T12:00:00Z").toLocaleDateString(undefined, {weekday:"short", day:"numeric"})) : "Last night"}<span>${x.games.length}</span></button>`).join("");
+  const scores = nightScores(n), topBy = {};
+  scores.forEach(x => { if (!topBy[x.gid]) topBy[x.gid] = x; });
+  const pending = latest ? ((DATA.schedule || []).find(d => d.date === n.date)?.games || []).filter(g => !(DATA.gamePages || {})[g.id]).length : 0;
+  const card = g => {
+    const sc = g.score.map(Number), ot = g.lines[0].length - 4, t = topBy[g.id];
+    const side = i => `<div class="line ${sc[i] < sc[1 - i] ? "loss" : ""}">${logoImg(i ? g.home : g.away)}${esc(i ? g.home : g.away)}<span class="pts">${esc(g.score[i])}</span></div>`;
+    return `<a class="sgame glink" href="#game-${esc(g.id)}" title="Box score and play-by-play">${side(0)}${side(1)}
+      <div class="meta"><span><b>Final</b>${ot > 0 ? ` ${ot > 1 ? ot : ""}OT` : ""}</span><span class="more">Box score →</span></div>${t ? `<div class="ltop">Top TTFL: ${esc(initialName(t.name))} <b>${t.s}</b></div>` : ""}</a>`;
+  };
+  el.innerHTML = `<h2>${fmtLong(n.date)} <span class="small muted">${n.games.length} game${n.games.length === 1 ? "" : "s"}${pending ? ` · ${pending} more still to finish` : ""}</span></h2>
+    <div class="sched">${n.games.map(card).join("")}</div>`;
+  const q = norm($("#rq2").value || ""), R = ROSTER_BY_ID();
+  const rows = scores.filter(x => !q || norm(x.name).includes(q) || norm(x.team).includes(q));
+  const tier = s => s >= 30 ? "t2" : s >= 20 ? "t3" : "";
+  $("#rTopTitle").hidden = false;
+  $("#rTop").innerHTML = rows.length ? `<div class="lrow head lvrow"><div>Player</div><div></div><div></div><div>TTFL</div></div>` + capped("rtop", rows, q).map((x, k) => `<div class="lrow lvrow golink ${k === 0 && !q ? "top" : ""}" data-gid="${esc(x.gid)}" role="link" tabindex="0">
+      <div style="min-width:0">${R[x.id] ? `<a class="plink name" href="#player-${esc(x.id)}">${esc(x.name)}</a>` : `<div class="name">${esc(x.name)}</div>`}<div class="sub">${esc(x.team)} ${x.home ? "vs" : "@"} ${esc(x.opp)} · ${Math.round(x.min)} min</div></div>
+      <div class="gs"></div><div class="tl">${logoImg(x.team)}</div>
+      <div class="sbox num ${k === 0 && !q ? "t1" : tier(x.s)}">${x.s}</div></div>`).join("") + moreRow("rtop", rows, q)
+    : `<div class="empty">${q ? "No player matches that search." : "No box scores for this night."}</div>`;
 }
 
 function renderStandings(){
@@ -1632,7 +1713,7 @@ function renderStandings(){
   const [west, east] = standings(15);
   $("#standList").innerHTML = west.length || east.length ? conf("West", west) + conf("East", east) : `<div class="empty">No records yet.</div>`;
 }
-const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, preview: renderPreview, player: renderPlayer, game: renderGame};
+const VIEWS = {home: renderHome, standings: renderStandings, tonight: null, live: renderLive, lastnight: renderLastNight, injuries: renderInjuries, players: renderForm, schedule: renderSchedule, teams: renderRosters, preview: renderPreview, player: renderPlayer, game: renderGame};
 let lastView = "teams", prevHash = "", curView = null;
 const toTop = () => window.scrollTo(0, 0);
 function showView(){
@@ -1657,8 +1738,7 @@ function showView(){
     if (state.gs.tab == null) state.gs.fromPid = back.startsWith("#player-") ? back.slice(8) : null;
     $("#gBack").href = back; $("#gBack").textContent = "← " + (back.startsWith("#player-") ? "Player" : $(`nav.menu a[data-view="${back.slice(1)}"]`)?.textContent || "Back");
     v = "game"; toTop();
-  } else if (v === "lastnight") v = "live"; // old links
-  else if (!(v in VIEWS)) v = "home";
+  } else if (!(v in VIEWS)) v = "home";
   if (v !== "player" && v !== "game" && v !== "preview") lastView = v;
   prevHash = location.hash;
   for (const k in VIEWS) $("#view-" + k).hidden = k !== v;
@@ -1670,7 +1750,7 @@ function showView(){
 }
 
 function init(){
-  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({form: renderForm})[b.dataset.more]?.(); });
+  document.addEventListener("click", e => { const b = e.target.closest("[data-more]"); if (!b) return; shown[b.dataset.more] = true; ({form: renderForm, rtop: renderLastNight})[b.dataset.more]?.(); });
   applyTheme();
   $("#themeBtn").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; try { localStorage.setItem("ttflTheme", theme); } catch (e) {} applyTheme(); });
   if (!DATA) { $("#rows").innerHTML = `<div class="empty">No data loaded.</div>`; return; }
@@ -1698,6 +1778,10 @@ function init(){
   $("#sTeam").addEventListener("input", renderSchedule);
   $("#sDays").addEventListener("click", e => { const b = e.target.closest("[data-sday]"); if (!b) return; state.sday = b.dataset.sday; renderSchedule(); });
   $("#rq").addEventListener("input", renderRosters);
+  $("#rDays").addEventListener("click", e => { const b = e.target.closest("[data-rday]"); if (!b) return; state.rday = b.dataset.rday; delete shown.rtop; renderLastNight(); });
+  $("#rq2").addEventListener("input", renderLastNight);
+  const rGo = e => { if (e.target.closest("a")) return; const r = e.target.closest(".golink[data-gid]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; location.hash = "game-" + r.dataset.gid; };
+  $("#rTop").addEventListener("click", rGo); $("#rTop").addEventListener("keydown", rGo);
   const standGo = e => { const r = e.target.closest("[data-team]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; state.team = r.dataset.team; $("#rq").value = ""; location.hash = "teams"; };
   $("#standList").addEventListener("click", standGo); $("#standList").addEventListener("keydown", standGo);
   const pvGo = e => { const r = e.target.closest(".golink[data-pid]"); if (!r || (e.type === "keydown" && e.key !== "Enter")) return; location.hash = "player-" + r.dataset.pid; };
@@ -1707,7 +1791,7 @@ function init(){
   $("#formList").addEventListener("keydown", e => { if (e.key === "Enter") formGo(e); });
   $("#rosterList").addEventListener("click", e => { if (e.target.closest("a")) return; const r = e.target.closest("[data-pid]"); if (r) location.hash = "player-" + r.dataset.pid; });
   $("#playerBody").addEventListener("click", onPlayerClick);
-  $("#gameBody").addEventListener("click", e => { const b = e.target.closest("[data-period]"); if (b) { state.gs.period = b.dataset.period; renderGame(); } const t = e.target.closest("[data-gtab]"); if (t) { state.gs.tab = t.dataset.gtab; renderGame(); } });
+  $("#gameBody").addEventListener("click", e => { const b = e.target.closest("[data-period]"); if (b) { state.gs.period = b.dataset.period; renderGame(); } const t = e.target.closest("[data-gtab]"); if (t) { state.gs.tab = t.dataset.gtab; renderGame(); } const c = e.target.closest("[data-clip]"); if (c) { state.gs.clip = state.gs.clip === +c.dataset.clip ? null : +c.dataset.clip; renderGame(); } });
   $("#gameBody").addEventListener("input", e => { if (e.target.id === "gScoring") { state.gs.scoring = e.target.checked; renderGame(); } });
   $("#playerBody").addEventListener("input", e => { if (e.target.id === "psGame") { state.ps.game = e.target.value === "" ? null : +e.target.value; state.ps.shot = null; state.ps.zone = null; renderPlayer(); }
     else if (e.target.id === "psLog") { state.ps.logSeason = e.target.value; state.ps.logN = 10; renderPlayer(); }

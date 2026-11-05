@@ -223,7 +223,8 @@ def game_detail(event_id):
     """Game page data for a finished game: line score, team stats, box score and play-by-play.
     p (players): [side 0 away / 1 home, id, name, starter, min, pts, reb, ast, stl, blk, fgm, fga, tpm, tpa, ftm, fta, to, oreb, dreb, pf, +/-]
                  or [side, id, name, starter, "DNP reason"] for players who did not play.
-    pbp: [period, clock, side (-1 none), away score, home score, scoring, text, [[player index, TTFL points], ...]]"""
+    pbp: [period, clock, side (-1 none), away score, home score, scoring, text, [[player index, TTFL points], ...]]
+    v (ESPN video clips): [headline, seconds, thumbnail, mp4, espn.com page]"""
     d = get(f"{SITE}/summary?event={event_id}")
     comp = ((d or {}).get("header", {}).get("competitions") or [{}])[0]
     if not d or not comp.get("status", {}).get("type", {}).get("completed"): return None
@@ -261,7 +262,9 @@ def game_detail(event_id):
     return {"date": day.isoformat(), "away": cs["away"]["team"]["abbreviation"], "home": cs["home"]["team"]["abbreviation"],
             "score": [cs["away"].get("score"), cs["home"].get("score")],
             "lines": [[x.get("displayValue") for x in cs[k].get("linescores") or []] for k in ("away", "home")],
-            "teamStats": [[tstats[i].get(n, "") for n in TEAM_STATS] for i in (0, 1)], "p": players, "pbp": pbp}
+            "teamStats": [[tstats[i].get(n, "") for n in TEAM_STATS] for i in (0, 1)], "p": players, "pbp": pbp,
+            "v": [[v.get("headline", ""), v.get("duration") or 0, v.get("thumbnail"), ((v.get("links") or {}).get("source") or {}).get("href"),
+                   ((v.get("links") or {}).get("web") or {}).get("href")] for v in d.get("videos") or [] if v.get("headline")]}
 
 def season_games(event_ids, season, pbp_games=80):
     """Game pages for every finished game of the season, cached on disk like the shots. Box scores for all of them,
@@ -269,7 +272,9 @@ def season_games(event_ids, season, pbp_games=80):
     path = CACHE / f"games-{season}.json"
     try: cache = json.loads(path.read_text())
     except Exception: cache = {}
-    todo = [e for e in event_ids if e not in cache]
+    # refetch games cached before clips were kept, and the last two days' games, whose clips ESPN adds over the following hours
+    recent_day = (dt.date.today() - dt.timedelta(days=2)).isoformat()
+    todo = [e for e in event_ids if e not in cache or "v" not in cache[e] or cache[e]["date"] >= recent_day]
     for e, g in zip(todo, pmap(game_detail, todo)):
         if g: cache[e] = g
     try:
