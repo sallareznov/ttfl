@@ -126,7 +126,7 @@ a.tileh .rows div:first-child .n{color:var(--accent)}
 .stand{display:grid;grid-template-columns:16px minmax(0,1fr) minmax(0,1fr);gap:6px 8px;font-size:.95rem;white-space:nowrap}
 .stand>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .tonh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
-.tonh .bh{font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.tonh .bh,a.tileh .bh{font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .tonh .rows .bn{display:flex;align-items:baseline}
 .tonh .rows .bn i{font-style:normal;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .tonh .rows .opp{flex:none;color:var(--muted);font-size:.8em;margin-left:5px}
@@ -1626,14 +1626,15 @@ function renderHome(){
   const bestHtml = best.length ? `<div><div class="bh">Highest projected pick</div><div class="rows">${best.map(r => `<div><span class="bn"><i>${esc(initialName(r.p.name))}</i><span class="opp">${r.home ? "vs" : "@"} ${esc(r.opp)}</span></span><span class="n">${f1(Math.max(r.exp, 0))}</span></div>`).join("")}</div></div>` : "";
   const lnd = lastNightDate(), ln = nights().find(n => n.date === lnd);
   const lnTop = ln ? nightScores(ln).slice(0, 5) : [];
-  const lnHtml = ln ? tile("games-" + ln.date, "lastnight", "Last night", `<div class="tonh"><div><div class="bh">Scores</div><div class="rows plain">${ln.games.slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(g.score[0])}-${esc(g.score[1])}</span></div>`).join("")}</div></div><div><div class="bh">Top TTFL</div><div class="rows">${lnTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div></div></div><span class="val foot">${ln.games.length} game${ln.games.length === 1 ? "" : "s"} · ${esc(fmtDay(ln.date))}</span>`, "wide") : "";
+  const lnHtml = ln ? tile("games-" + ln.date, "schedule", "Games", `<div><div class="bh">Last night</div><div class="rows plain">${ln.games.slice(0, 5).map(g => `<div><span>${esc(g.away)} @ ${esc(g.home)}</span><span class="n">${esc(g.score[0])}-${esc(g.score[1])}</span></div>`).join("")}</div></div>`) : tile("games", "schedule", "Games", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "");
+  // Live: live box scores where they load (GitHub Pages), otherwise last night's top TTFL scores
+  const topRows = (head, xs) => `<div>${head ? `<div class="bh">${head}</div>` : ""}<div class="rows">${xs.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div></div>`;
   $("#view-home").innerHTML = `
     ${tile("tonight", "tonight", "Tonight", DATA.games.length ? `<div class="tonh">${gamesHtml}${bestHtml}</div><span class="val foot">${DATA.games.length} game${DATA.games.length === 1 ? "" : "s"}${best.length ? " · projected TTFL score" : ""}</span>` : stat(0, "games"), "wide")}
     ${lnHtml}
+    ${tile("live", "live", "Live", liveTop.length ? topRows("", liveTop) : lnTop.length ? topRows("Last night", lnTop) : liveStat)}
     ${tile("injuries", "injuries", "Injuries", stat(out, `out · ${inj.length} listed on tonight's teams`))}
-    ${liveTop.length ? tile("live", "live", "Live", `<div class="rows">${liveTop.map(x => `<div><span>${esc(initialName(x.name))}</span><span class="n">${x.s}</span></div>`).join("")}</div>`) : tile("live", "live", "Live", liveStat)}
     ${tile("players", "form", "Players", `<div class="rows">${form.map(x => `<div><span>${esc(initialName(x.n))}</span><span class="n">${x.a.toFixed(1)}</span></div>`).join("")}</div>`)}
-    ${tile(next ? "games-" + next.date : "games", "schedule", "Schedule", next ? stat(next.games.length, `games next, ${esc(fmtDay(next.date))}`) : "")}
     ${tile("teams", "rosters", "Teams", stat(Object.values(DATA.rosters || {}).reduce((n, r) => n + r.players.length, 0), "players · 30 teams"))}
     ${tile("standings", "standings", "Standings", west.length ? `<div class="stand"><span></span><span class="h">WEST</span><span class="h">EAST</span>${[0,1,2,3,4,5].map(k => `<span class="k">${k + 1}</span>${[west[k], east[k]].map(x => x ? `<span class="${k ? "" : "top"}">${esc(x.t)}<span class="r">${esc(x.r)}</span></span>` : "<span></span>").join("")}`).join("")}</div>` : `<span class="val">No records yet</span>`)}`;
 }
