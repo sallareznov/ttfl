@@ -1666,6 +1666,31 @@ function resultCard(g, top){
   return `<a class="sgame glink" href="#game-${esc(g.id)}" title="Box score, highlights and play-by-play">${side(0)}${side(1)}
     <div class="meta"><span><b>Final</b>${ot > 0 ? ` ${ot > 1 ? ot : ""}OT` : ""}</span><span class="more">Box score →</span></div>${top ? `<div class="ltop">Top TTFL: ${esc(initialName(top.name))} <b>${top.s}</b></div>` : ""}</a>`;
 }
+// The page is a snapshot from the last build, and builds can be hours apart. When the Games page shows a day
+// with games that are live or should have started, it reads that day's ESPN scoreboard and updates the cards.
+const gsync = {busy: false, last: {}};
+const unsettled = d => (d.sched || []).some(g => g.state === "in" || (g.state === "pre" && new Date(g.time) <= new Date()));
+async function syncGameDay(date){
+  if (gsync.busy || Date.now() - (gsync.last[date] || 0) < 60000) return;
+  gsync.busy = true; gsync.last[date] = Date.now();
+  try {
+    const sb = await espn("/scoreboard?dates=" + date.replace(/-/g, "")), day = (DATA.schedule || []).find(d => d.date === date);
+    let changed = false;
+    for (const ev of sb.events || []) {
+      const g = day && day.games.find(x => x.id === ev.id); if (!g) continue;
+      const c = ev.competitions[0], st = c.status.type, h = c.competitors.find(x => x.homeAway === "home"), a = c.competitors.find(x => x.homeAway === "away");
+      const next = {state: st.state, detail: st.shortDetail, homeScore: st.state !== "pre" ? h.score : null, awayScore: st.state !== "pre" ? a.score : null};
+      if (Object.keys(next).some(k => g[k] !== next[k])) { Object.assign(g, next); changed = true; }
+    }
+    if (changed && !$("#view-games").hidden) renderGames();
+    else if (changed && !$("#view-home").hidden) renderHome();
+  } catch (e) {} // claude.ai's sandbox blocks outside sites: keep the snapshot
+  finally { gsync.busy = false; }
+}
+setInterval(() => {
+  if ($("#view-games").hidden || document.visibilityState !== "visible" || !state.gday) return;
+  const d = gameDays().find(x => x.date === state.gday); if (d && unsettled(d)) syncGameDay(d.date);
+}, 15000);
 function renderGames(){
   const D = gameDays(), GP = DATA.gamePages || {}, team = $("#gTeam").value, ln = lastNightDate();
   const hideTop = () => { $("#gTopTitle").hidden = $("#gTopCtl").hidden = true; $("#gTop").innerHTML = ""; };
@@ -1701,7 +1726,8 @@ function renderGames(){
     const r = sel.getBoundingClientRect(), c = gd.getBoundingClientRect();
     if (r.left < c.left || r.right > c.right) gd.scrollLeft += (r.left + r.width / 2) - (c.left + c.width / 2); });
   const d = D.find(x => x.date === state.gday), n = count(d);
-  const pending = d.done.length && d.sched ? d.sched.filter(g => !GP[g.id]).length : 0;
+  if (unsettled(d)) syncGameDay(d.date);
+  const pending = d.done.length && d.sched ? d.sched.filter(g => !GP[g.id] && g.state !== "post").length : 0;
   $("#gList").innerHTML = `<section class="sday"><h2>${fmtLong(d.date)}${tag(d)} <span class="small muted">${n ? `${n} game${n === 1 ? "" : "s"}` : "No games"}${pending ? ` · ${pending} still to finish` : ""}</span></h2>
     ${n ? `<div class="sched">${dayCards(d, d.sched || d.done)}</div>` : ""}</section>`;
   // TTFL ranking of the day's finished games
